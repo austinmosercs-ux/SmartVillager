@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+build/
+
+# IDE outputs
+bin/
+.idea/
+*.iml
+out/
+.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NeoForge run directory (generated on first launch)
+run/
