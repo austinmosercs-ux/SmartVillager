@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinVillager {
 
     @Inject(method = "refreshBrain", at = @At("RETURN"))
+    @SuppressWarnings("java:S100") // Mixin convention requires $ separator; regex rule doesn't apply here
     private void smartvillager$onRefreshBrain(ServerLevel level, CallbackInfo ci) {
         ProfessionBehaviorRegistry.onBrainRefresh(level, (Villager)(Object)this);
     }
