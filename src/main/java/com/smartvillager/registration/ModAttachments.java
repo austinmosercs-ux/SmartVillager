@@ -1,6 +1,7 @@
 package com.smartvillager.registration;
 
 import com.smartvillager.SmartVillager;
+import com.smartvillager.hunger.VillagerHunger;
 import com.smartvillager.inventory.VillagerBackpack;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -21,5 +22,10 @@ public final class ModAttachments {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<VillagerBackpack>>
         VILLAGER_BACKPACK = ATTACHMENT_TYPES.register("villager_backpack", () ->
             AttachmentType.builder(VillagerBackpack::new).build()
+        );
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<VillagerHunger>>
+        VILLAGER_HUNGER = ATTACHMENT_TYPES.register("villager_hunger", () ->
+            AttachmentType.builder(VillagerHunger::new).build()
         );
 }

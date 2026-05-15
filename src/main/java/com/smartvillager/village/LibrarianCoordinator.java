@@ -48,7 +48,7 @@ public final class LibrarianCoordinator {
     private static final int FISHING_ROD_MIN = 1;
 
     // --- Item IDs ---
-    private static final Set<Identifier> FOOD_ITEMS = Set.of(
+    public static final Set<Identifier> FOOD_ITEMS = Set.of(
         Identifier.withDefaultNamespace("bread"),
         Identifier.withDefaultNamespace("wheat"),
         Identifier.withDefaultNamespace("carrot"),

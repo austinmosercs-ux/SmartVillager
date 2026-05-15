@@ -2,6 +2,7 @@ package com.smartvillager.village;
 
 import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
+import com.smartvillager.hunger.HungerSystem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -157,12 +158,15 @@ public final class VillageDetector {
         if (village.getMode() == SimulationMode.ABSTRACT) {
             long elapsed = level.getGameTime() - village.getLastAbstractUpdate();
             if (elapsed >= ABSTRACT_UPDATE_INTERVAL) {
-                runAbstractBatchUpdate(village);
+                runAbstractBatchUpdate(village, elapsed);
                 village.setLastAbstractUpdate(level.getGameTime());
                 registry.setDirty();
             }
-        } else if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
-            LibrarianCoordinator.tick(village);
+        } else {
+            HungerSystem.tick(level, village, PROXIMITY_CHECK_INTERVAL);
+            if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
+                LibrarianCoordinator.tick(village);
+            }
         }
     }
 
@@ -182,9 +186,10 @@ public final class VillageDetector {
      * Approximates what happened in the village during the abstract period.
      * Stub — hunger/health/NeedQueue systems (branches 5-7) will fill this in.
      */
-    private static void runAbstractBatchUpdate(SmartVillage village) {
-        LOGGER.debug("[SmartVillager] Abstract batch update for village at {} (roster size: {})",
-            village.getAnchor(), village.getRoster().size());
+    private static void runAbstractBatchUpdate(SmartVillage village, long elapsed) {
+        LOGGER.debug("[SmartVillager] Abstract batch update for village at {} (roster size: {}, elapsed: {} ticks)",
+            village.getAnchor(), village.getRoster().size(), elapsed);
         LibrarianCoordinator.abstractTick(village);
+        HungerSystem.abstractTick(village, elapsed);
     }
 }
