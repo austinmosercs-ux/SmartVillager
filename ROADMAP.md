@@ -22,8 +22,9 @@ Each feature is built on its own branch and merged to `main` when stable before 
 | 12 | `feature/prosperity-score` | Population gating, growth unlocks | |
 | 13 | `feature/personality-reputation` | Traits, inter-villager trust, village memory | |
 | 14 | `feature/builder-expansion` | Build queue, Builder AI, village growth | |
-| 15 | `feature/workblock-textures` | Custom textures for all 5 workblocks — replace placeholder vanilla textures with proper PNGs | |
-| 16 | `feature/workblock-recipes` | Crafting recipes for all 5 workblocks so they can be obtained in survival | |
+| 15 | `feature/villager-skins` | Custom skins for all 5 new villager professions — Builder, Miner, Hunter, Guard, and Elder each get a unique appearance | |
+| 16 | `feature/workblock-textures` | Custom textures for all 5 workblocks — replace placeholder vanilla textures with proper PNGs | |
+| 17 | `feature/workblock-recipes` | Crafting recipes for all 5 workblocks so they can be obtained in survival | |
 
 ---
 
