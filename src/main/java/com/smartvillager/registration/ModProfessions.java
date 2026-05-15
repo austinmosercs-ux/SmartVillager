@@ -7,6 +7,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.trading.TradeSet;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -18,53 +19,30 @@ public class ModProfessions {
     public static final DeferredRegister<VillagerProfession> PROFESSIONS =
         DeferredRegister.create(Registries.VILLAGER_PROFESSION, SmartVillager.MOD_ID);
 
-    public static final DeferredHolder<VillagerProfession, VillagerProfession> BUILDER =
-        PROFESSIONS.register("builder", () -> new VillagerProfession(
-            Component.translatable("entity.smartvillager.villager.builder"),
-            holder -> holder.is(ModPoiTypes.BUILDER_POI.getKey()),
-            holder -> holder.is(ModPoiTypes.BUILDER_POI.getKey()),
-            ImmutableSet.of(),
-            ImmutableSet.of(),
-            SoundEvents.VILLAGER_WORK_TOOLSMITH,
-            Int2ObjectMap.<ResourceKey<TradeSet>>ofEntries()));
-
-    public static final DeferredHolder<VillagerProfession, VillagerProfession> MINER =
-        PROFESSIONS.register("miner", () -> new VillagerProfession(
-            Component.translatable("entity.smartvillager.villager.miner"),
-            holder -> holder.is(ModPoiTypes.MINER_POI.getKey()),
-            holder -> holder.is(ModPoiTypes.MINER_POI.getKey()),
-            ImmutableSet.of(),
-            ImmutableSet.of(),
-            SoundEvents.VILLAGER_WORK_TOOLSMITH,
-            Int2ObjectMap.<ResourceKey<TradeSet>>ofEntries()));
-
-    public static final DeferredHolder<VillagerProfession, VillagerProfession> HUNTER =
-        PROFESSIONS.register("hunter", () -> new VillagerProfession(
-            Component.translatable("entity.smartvillager.villager.hunter"),
-            holder -> holder.is(ModPoiTypes.HUNTER_POI.getKey()),
-            holder -> holder.is(ModPoiTypes.HUNTER_POI.getKey()),
-            ImmutableSet.of(),
-            ImmutableSet.of(),
-            SoundEvents.VILLAGER_WORK_FLETCHER,
-            Int2ObjectMap.<ResourceKey<TradeSet>>ofEntries()));
-
+    // Guard patrols from the vanilla Bell as their origin anchor.
+    // acquirableJobSite is always false — profession is assigned at birth by the village
+    // registration system, never granted by walking up to a block.
+    // heldJobSite matches PoiTypes.MEETING (Bell) so the brain's ValidateNearbyPoi and
+    // SetWalkTargetFromBlockMemory behaviors know where the Guard's anchor is.
     public static final DeferredHolder<VillagerProfession, VillagerProfession> GUARD =
         PROFESSIONS.register("guard", () -> new VillagerProfession(
             Component.translatable("entity.smartvillager.villager.guard"),
-            holder -> holder.is(ModPoiTypes.GUARD_POI.getKey()),
-            holder -> holder.is(ModPoiTypes.GUARD_POI.getKey()),
+            holder -> holder.is(PoiTypes.MEETING),
+            holder -> false,
             ImmutableSet.of(),
             ImmutableSet.of(),
             SoundEvents.VILLAGER_WORK_WEAPONSMITH,
             Int2ObjectMap.<ResourceKey<TradeSet>>ofEntries()));
 
-    public static final DeferredHolder<VillagerProfession, VillagerProfession> ELDER =
-        PROFESSIONS.register("elder", () -> new VillagerProfession(
-            Component.translatable("entity.smartvillager.villager.elder"),
-            holder -> holder.is(ModPoiTypes.ELDER_POI.getKey()),
-            holder -> holder.is(ModPoiTypes.ELDER_POI.getKey()),
+    // Merchant has no job site. They wander in the village center during work hours and
+    // path toward the player on proximity. Neither predicate ever matches a POI.
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> MERCHANT =
+        PROFESSIONS.register("merchant", () -> new VillagerProfession(
+            Component.translatable("entity.smartvillager.villager.merchant"),
+            holder -> false,
+            holder -> false,
             ImmutableSet.of(),
             ImmutableSet.of(),
-            SoundEvents.VILLAGER_WORK_LIBRARIAN,
+            SoundEvents.VILLAGER_WORK_CARTOGRAPHER,
             Int2ObjectMap.<ResourceKey<TradeSet>>ofEntries()));
 }
