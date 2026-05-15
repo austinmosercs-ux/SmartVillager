@@ -11,8 +11,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.DyeColor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -29,10 +32,13 @@ import java.util.UUID;
  *                      Identifier of their assigned profession
  *   lastAbstractUpdate — server game-time tick of the last abstract batch
  *                        update; used to schedule the next one
+ *   stockpile        — shared village inventory; all villagers deposit/withdraw
+ *                      here; optionalFieldOf so pre-stockpile saves still load
  *
- * Runtime-only field (NOT persisted):
- *   mode — SimulationMode; always starts as ABSTRACT on load and transitions
- *          to FULL when a player is within range
+ * Runtime-only fields (NOT persisted):
+ *   mode      — SimulationMode; always starts as ABSTRACT on load
+ *   shortages — item shortage flags set by LibrarianCoordinator each scan;
+ *               recomputed from stockpile so they don't need to be persisted
  */
 public final class SmartVillage {
 
@@ -57,7 +63,11 @@ public final class SmartVillage {
             .forGetter(SmartVillage::getRoster),
         Codec.LONG
             .fieldOf("last_abstract_update")
-            .forGetter(SmartVillage::getLastAbstractUpdate)
+            .forGetter(SmartVillage::getLastAbstractUpdate),
+        VillageStockpile.CODEC
+            .optionalFieldOf("stockpile")
+            .xmap(opt -> opt.orElseGet(VillageStockpile::new), Optional::of)
+            .forGetter(SmartVillage::getStockpile)
     ).apply(i, SmartVillage::new));
 
     private final UUID id;
@@ -66,16 +76,20 @@ public final class SmartVillage {
     private final DyeColor merchantColor;
     private final Map<UUID, Identifier> roster;
     private long lastAbstractUpdate;
+    private final VillageStockpile stockpile;
     private SimulationMode mode = SimulationMode.ABSTRACT;
+    private Set<Identifier> shortages = Collections.emptySet();
 
     public SmartVillage(UUID id, BlockPos anchor, ResourceKey<VillagerType> villagerTypeKey,
-                        DyeColor merchantColor, Map<UUID, Identifier> roster, long lastAbstractUpdate) {
+                        DyeColor merchantColor, Map<UUID, Identifier> roster,
+                        long lastAbstractUpdate, VillageStockpile stockpile) {
         this.id = id;
         this.anchor = anchor;
         this.villagerTypeKey = villagerTypeKey;
         this.merchantColor = merchantColor;
         this.roster = new HashMap<>(roster);
         this.lastAbstractUpdate = lastAbstractUpdate;
+        this.stockpile = stockpile;
     }
 
     public static SmartVillage create(BlockPos anchor, ResourceKey<VillagerType> typeKey,
@@ -86,7 +100,8 @@ public final class SmartVillage {
             typeKey,
             MerchantColor.randomFor(typeKey, random),
             new HashMap<>(),
-            gameTime
+            gameTime,
+            new VillageStockpile()
         );
     }
 
@@ -130,6 +145,18 @@ public final class SmartVillage {
 
     public void setLastAbstractUpdate(long tick) {
         this.lastAbstractUpdate = tick;
+    }
+
+    // --- stockpile ---
+
+    public VillageStockpile getStockpile() { return stockpile; }
+
+    // --- shortages (runtime-only, set by LibrarianCoordinator) ---
+
+    public Set<Identifier> getShortages() { return shortages; }
+
+    public void setShortages(Set<Identifier> shortages) {
+        this.shortages = Set.copyOf(shortages);
     }
 
     // --- getters ---

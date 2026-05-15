@@ -135,6 +135,9 @@ public final class VillageDetector {
         }
     }
 
+    /** How often (in ticks) the LibrarianCoordinator scans for shortages during full simulation. */
+    private static final int LIBRARIAN_CHECK_INTERVAL = 200;
+
     private static void tickVillage(ServerLevel level, VillageRegistry registry, SmartVillage village) {
         boolean playerNearby = level.players().stream().anyMatch(
             p -> p.blockPosition().distSqr(village.getAnchor()) <= (long) FULL_SIM_RADIUS * FULL_SIM_RADIUS
@@ -158,6 +161,8 @@ public final class VillageDetector {
                 village.setLastAbstractUpdate(level.getGameTime());
                 registry.setDirty();
             }
+        } else if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
+            LibrarianCoordinator.tick(village);
         }
     }
 
@@ -180,5 +185,6 @@ public final class VillageDetector {
     private static void runAbstractBatchUpdate(SmartVillage village) {
         LOGGER.debug("[SmartVillager] Abstract batch update for village at {} (roster size: {})",
             village.getAnchor(), village.getRoster().size());
+        LibrarianCoordinator.abstractTick(village);
     }
 }
