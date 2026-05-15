@@ -1,0 +1,13 @@
+{
+  "block.smartvillager.builders_workbench": "Builder's Workbench",
+  "block.smartvillager.mining_station": "Mining Station",
+  "block.smartvillager.hunter_post": "Hunter Post",
+  "block.smartvillager.guard_post": "Guard Post",
+  "block.smartvillager.elder_podium": "Elder Podium",
+
+  "entity.smartvillager.villager.builder": "Builder",
+  "entity.smartvillager.villager.miner": "Miner",
+  "entity.smartvillager.villager.hunter": "Hunter",
+  "entity.smartvillager.villager.guard": "Guard",
+  "entity.smartvillager.villager.elder": "Elder"
+}
