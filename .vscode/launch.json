@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "Client",
+      "presentation": {
+        "group": "Mod Development - yippeespider",
+        "order": 0
+      },
+      "projectName": "yippeespider",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@/Users/austinmoser/SmartVillager/build/moddev/clientRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@/Users/austinmoser/SmartVillager/build/moddev/clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dmodid%%/Users/austinmoser/SmartVillager/bin/main"
+      ],
+      "cwd": "${workspaceFolder}/run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    },
+    {
+      "type": "java",
+      "request": "launch",
+      "name": "Server",
+      "presentation": {
+        "group": "Mod Development - yippeespider",
+        "order": 1
+      },
+      "projectName": "yippeespider",
+      "mainClass": "net.neoforged.devlaunch.Main",
+      "args": [
+        "@/Users/austinmoser/SmartVillager/build/moddev/serverRunProgramArgs.txt"
+      ],
+      "vmArgs": [
+        "@/Users/austinmoser/SmartVillager/build/moddev/serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dmodid%%/Users/austinmoser/SmartVillager/bin/main"
+      ],
+      "cwd": "${workspaceFolder}/run",
+      "env": {},
+      "console": "internalConsole",
+      "shortenCommandLine": "none"
+    }
+  ]
+}

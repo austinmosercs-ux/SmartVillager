@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+
+Command-Line:
+ - /opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home/bin/java
+ - -jar
+ - /Users/austinmoser/.gradle/caches/modules-2/files-2.1/io.codechicken/DiffPatch/2.0.0.36/5b32f9baa0c0371c0dc80a3b88794960af0c6b44/DiffPatch-2.0.0.36-all.jar
+ - /Users/austinmoser/.gradle/caches/neoformruntime/intermediate_results/patch_936273bc5e2cb1e793266532494f70c8a969df35_output.zip
+ - /Users/austinmoser/.gradle/caches/modules-2/files-2.1/net.neoforged/neoforge/21.1.93/8b48d556e61b66e1ff424abb3be3a68977eec1f2/neoforge-21.1.93-userdev.jar
+ - --prefix
+ - patches/
+ - --patch
+ - --archive
+ - ZIP
+ - --output
+ - ./output.zip
+ - --log-level
+ - WARN
+ - --mode
+ - OFFSET
+ - --archive-rejects
+ - ZIP
+ - --reject
+ - ./outputRejects.zip
+ - --base-path-prefix
+ - a/
+ - --modified-path-prefix
+ - b/
+--------------------------------------------------------------------------------
+

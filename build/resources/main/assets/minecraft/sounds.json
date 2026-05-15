@@ -1,0 +1,26 @@
+{
+  "entity.spider.ambient": {
+    "replace": true,
+    "sounds": [
+      { "name": "yippeespider:yippee", "stream": false }
+    ]
+  },
+  "entity.spider.hurt": {
+    "replace": true,
+    "sounds": [
+      { "name": "yippeespider:yippee", "stream": false }
+    ]
+  },
+  "entity.spider.death": {
+    "replace": true,
+    "sounds": [
+      { "name": "yippeespider:yippee", "stream": false }
+    ]
+  },
+  "entity.spider.step": {
+    "replace": true,
+    "sounds": [
+      { "name": "yippeespider:yippee", "stream": false }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="yippeespider"
+version="1.0.1"
+displayName="YippeeSpider"
+authors="Austin Moser"
+description='''Replaces all spider and cave-spider sounds with a yippee.'''
+
+[[dependencies.yippeespider]]
+    modId="neoforge"
+    type="required"
+    versionRange="[26.1.2,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.yippeespider]]
+    modId="minecraft"
+    type="required"
+    versionRange="[26.1.2,26.2)"
+    ordering="NONE"
+    side="BOTH"

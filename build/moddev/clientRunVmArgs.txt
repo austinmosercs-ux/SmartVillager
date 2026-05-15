@@ -1,0 +1,11 @@
+--sun-misc-unsafe-memory-access=allow
+--enable-native-access=ALL-UNNAMED
+--add-opens
+java.base/java.lang.invoke=ALL-UNNAMED
+--add-exports
+jdk.naming.dns/com.sun.jndi.dns=java.naming
+-XstartOnFirstThread
+-Dlog4j2.configurationFile=/Users/austinmoser/Documents/YippeeSpider/build/moddev/clientLog4j2.xml
+-Djava.net.preferIPv6Addresses=system
+-Dneoforge.enableGameTest=true
+-Dneoforge.enabledGameTestNamespaces=yippeespider
