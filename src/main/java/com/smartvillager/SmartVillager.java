@@ -1,5 +1,6 @@
 package com.smartvillager;
 
+import com.smartvillager.registration.ModAttachments;
 import com.smartvillager.registration.ModProfessions;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -11,5 +12,6 @@ public final class SmartVillager {
 
     public SmartVillager(IEventBus modEventBus) {
         ModProfessions.PROFESSIONS.register(modEventBus);
+        ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
     }
 }
