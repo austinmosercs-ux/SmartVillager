@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
 import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
+import com.smartvillager.needqueue.NeedQueue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -199,7 +200,7 @@ public final class VillageDetector {
         if (village.getMode() == SimulationMode.ABSTRACT) {
             long elapsed = level.getGameTime() - village.getLastAbstractUpdate();
             if (elapsed >= ABSTRACT_UPDATE_INTERVAL) {
-                runAbstractBatchUpdate(village, elapsed);
+                runAbstractBatchUpdate(village, elapsed, level.getGameTime());
                 village.setLastAbstractUpdate(level.getGameTime());
                 registry.setDirty();
             }
@@ -208,6 +209,7 @@ public final class VillageDetector {
             HealthSystem.tick(level, village);
             if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
                 LibrarianCoordinator.tick(village);
+                NeedQueue.tick(village, level.getGameTime());
             }
         }
     }
@@ -224,10 +226,11 @@ public final class VillageDetector {
         // Future branches will snapshot physical villager state here.
     }
 
-    private static void runAbstractBatchUpdate(SmartVillage village, long elapsed) {
+    private static void runAbstractBatchUpdate(SmartVillage village, long elapsed, long currentTick) {
         LOGGER.debug("[SmartVillager] Abstract batch update for village at {} (roster size: {}, elapsed: {} ticks)",
             village.getAnchor(), village.getRoster().size(), elapsed);
         LibrarianCoordinator.abstractTick(village);
+        NeedQueue.abstractTick(village, currentTick);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);
         for (UUID uuid : died) {

@@ -2,6 +2,7 @@ package com.smartvillager.village;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.smartvillager.needqueue.VillageNeedQueue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
@@ -67,7 +68,11 @@ public final class SmartVillage {
         VillageStockpile.CODEC
             .optionalFieldOf("stockpile")
             .xmap(opt -> opt.orElseGet(VillageStockpile::new), Optional::of)
-            .forGetter(SmartVillage::getStockpile)
+            .forGetter(SmartVillage::getStockpile),
+        VillageNeedQueue.CODEC
+            .optionalFieldOf("need_queue")
+            .xmap(opt -> opt.orElseGet(VillageNeedQueue::new), Optional::of)
+            .forGetter(SmartVillage::getNeedQueue)
     ).apply(i, SmartVillage::new));
 
     private final UUID id;
@@ -77,6 +82,7 @@ public final class SmartVillage {
     private final Map<UUID, Identifier> roster;
     private long lastAbstractUpdate;
     private final VillageStockpile stockpile;
+    private final VillageNeedQueue needQueue;
     private SimulationMode mode = SimulationMode.ABSTRACT;
     private Set<Identifier> shortages = Collections.emptySet();
     // Runtime-only: per-villager notional HP used during abstract simulation.
@@ -86,9 +92,11 @@ public final class SmartVillage {
 
     private static final float DEFAULT_ABSTRACT_HEALTH = 20.0f; // matches VillagerHealth.MAX
 
+    @SuppressWarnings("java:S107") // all parameters are codec-driven fields; no meaningful grouping exists
     public SmartVillage(UUID id, BlockPos anchor, ResourceKey<VillagerType> villagerTypeKey,
                         DyeColor merchantColor, Map<UUID, Identifier> roster,
-                        long lastAbstractUpdate, VillageStockpile stockpile) {
+                        long lastAbstractUpdate, VillageStockpile stockpile,
+                        VillageNeedQueue needQueue) {
         this.id = id;
         this.anchor = anchor;
         this.villagerTypeKey = villagerTypeKey;
@@ -96,6 +104,7 @@ public final class SmartVillage {
         this.roster = new HashMap<>(roster);
         this.lastAbstractUpdate = lastAbstractUpdate;
         this.stockpile = stockpile;
+        this.needQueue = needQueue;
     }
 
     public static SmartVillage create(BlockPos anchor, ResourceKey<VillagerType> typeKey,
@@ -107,7 +116,8 @@ public final class SmartVillage {
             MerchantColor.randomFor(typeKey, random),
             new HashMap<>(),
             gameTime,
-            new VillageStockpile()
+            new VillageStockpile(),
+            new VillageNeedQueue()
         );
     }
 
@@ -167,6 +177,10 @@ public final class SmartVillage {
     // --- stockpile ---
 
     public VillageStockpile getStockpile() { return stockpile; }
+
+    // --- need queue ---
+
+    public VillageNeedQueue getNeedQueue() { return needQueue; }
 
     // --- shortages (runtime-only, set by LibrarianCoordinator) ---
 
