@@ -48,7 +48,7 @@ public final class VillagerHealth {
      * that bypasses our system (mob attacks, fall damage, lava, etc.).
      */
     public void syncFrom(float vanillaHp) {
-        hp = Math.max(0f, Math.min(MAX, vanillaHp));
+        hp = Math.clamp(vanillaHp, 0f, MAX);
         seekingHealing = hp < LOW_HEALTH;
     }
 
