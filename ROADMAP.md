@@ -11,13 +11,13 @@ Nothing in Phase 2 or later runs correctly until all of these are stable.
 
 | # | Branch | What it covers | Status |
 |---|---|---|---|
-| 1 | `feature/professions-workblocks` | Register Guard and Merchant as the only two custom professions; override behavior entry points for all vanilla professions; workblocks serve as job site anchors only, not profession gates | In Review |
-| 2 | `feature/village-registration` | Detect all naturally spawning vanilla villages and register them with the mod; assign starting rosters and biome-based Merchant colors at registration time; implement two-mode simulation — full simulation (chunks loaded, villagers physically move) when player is within ~128 blocks, abstract simulation (chunks unloaded, village state tracked as data with batch updates every few minutes) when player is far away; state is reconciled and full simulation resumes when player returns | In Review |
-| 3 | `feature/village-stockpile` | Shared chest/data structure attached to the village; Librarian as coordinator — tracks supply levels, flags shortages, drives NeedQueue requests | In Review |
+| 1 | `feature/professions-workblocks` | Register Guard and Merchant as the only two custom professions; override behavior entry points for all vanilla professions; workblocks serve as job site anchors only, not profession gates | Done |
+| 2 | `feature/village-registration` | Detect all naturally spawning vanilla villages and register them with the mod; assign starting rosters and biome-based Merchant colors at registration time; implement two-mode simulation — full simulation (chunks loaded, villagers physically move) when player is within ~128 blocks, abstract simulation (chunks unloaded, village state tracked as data with batch updates every few minutes) when player is far away; state is reconciled and full simulation resumes when player returns | Done |
+| 3 | `feature/village-stockpile` | Shared chest/data structure attached to the village; Librarian as coordinator — tracks supply levels, flags shortages, drives NeedQueue requests | Done |
 | 4 | `feature/villager-backpack` | Per-villager inventory with 15 slots + 4 armor slots — holds food, tools, carried items, and equipped gear | In Review |
-| 5 | `feature/hunger-system` | Hunger value per villager; depletion rate varies by role (Guard and active gatherers burn faster); eat behavior routing to shared food supply | In Review |
+| 5 | `feature/hunger-system` | Hunger value per villager; depletion rate varies by role (Guard and active gatherers burn faster); eat behavior routing to shared food supply | Done |
 | 6 | `feature/health-system` | Combat, environmental, and starvation damage; permanent death and role replacement; SEEK_HEALING behavior | |
-| 7 | `feature/need-queue` | Core village communication — NeedRequest structure (type, urgency, reward, poster); queue scoped per village; idle-state polling; request acceptance and completion | |
+| 7 | `feature/need-queue` | Core village communication — NeedRequest structure (type, urgency, reward, poster); queue scoped per village; idle-state polling; request acceptance and completion | Done |
 
 ---
 

@@ -44,9 +44,11 @@ public final class VillageDetector {
     private static final long ABSTRACT_UPDATE_INTERVAL = 1200L;
 
     // --- Profession Identifiers ---
-    private static final Identifier PROF_LIBRARIAN = Identifier.withDefaultNamespace("librarian");
-    private static final Identifier PROF_FARMER    = Identifier.withDefaultNamespace("farmer");
-    private static final Identifier PROF_GUARD     = Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "guard");
+    private static final Identifier PROF_LIBRARIAN  = Identifier.withDefaultNamespace("librarian");
+    private static final Identifier PROF_FARMER     = Identifier.withDefaultNamespace("farmer");
+    private static final Identifier PROF_GUARD      = Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "guard");
+    private static final Identifier PROF_CLERIC     = Identifier.withDefaultNamespace("cleric");
+    private static final Identifier PROF_TOOLSMITH  = Identifier.withDefaultNamespace("toolsmith");
     private VillageDetector() {}
 
     // -------------------------------------------------------------------------
@@ -160,6 +162,8 @@ public final class VillageDetector {
         if (village.countProfession(PROF_LIBRARIAN) == 0) return PROF_LIBRARIAN;
         if (village.countProfession(PROF_FARMER)    == 0) return PROF_FARMER;
         if (village.countProfession(PROF_GUARD)     == 0) return PROF_GUARD;
+        if (village.countProfession(PROF_CLERIC)    == 0) return PROF_CLERIC;
+        if (village.countProfession(PROF_TOOLSMITH) == 0) return PROF_TOOLSMITH;
         return PROF_FARMER;
     }
 

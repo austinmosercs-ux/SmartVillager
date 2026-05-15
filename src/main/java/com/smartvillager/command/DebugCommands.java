@@ -13,16 +13,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @EventBusSubscriber(modid = SmartVillager.MOD_ID)
 public final class DebugCommands {
@@ -30,6 +35,15 @@ public final class DebugCommands {
 
     private static final double VILLAGE_SEARCH_RADIUS = 256.0;
     private static final String NO_VILLAGE_MSG = "No village within " + (int) VILLAGE_SEARCH_RADIUS + " blocks.";
+
+    /** Players who have toggled villager thought broadcasting on. */
+    private static final Set<UUID> DEBUG_PLAYERS = new HashSet<>();
+
+    /** How often to broadcast villager thoughts (ticks). 100 = 5 seconds. */
+    private static final int DEBUG_INTERVAL = 100;
+
+    /** Radius (blocks) around the player to scan for villagers during debug broadcast. */
+    private static final double DEBUG_RADIUS = 32.0;
 
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -49,7 +63,79 @@ public final class DebugCommands {
                                 .executes(ctx -> stockpileAdd(
                                     ctx.getSource().getPlayerOrException(),
                                     StringArgumentType.getString(ctx, "item"),
-                                    IntegerArgumentType.getInteger(ctx, "amount"))))))));
+                                    IntegerArgumentType.getInteger(ctx, "amount")))))))
+                .then(Commands.literal("debug")
+                    .executes(ctx -> toggleDebug(ctx.getSource().getPlayerOrException()))));
+    }
+
+    // -------------------------------------------------------------------------
+    // /sv debug  (toggle)
+    // -------------------------------------------------------------------------
+
+    private static int toggleDebug(ServerPlayer player) {
+        UUID id = player.getUUID();
+        if (DEBUG_PLAYERS.remove(id)) {
+            player.sendSystemMessage(
+                Component.literal("[SmartVillager] Villager thoughts OFF.")
+                    .withStyle(ChatFormatting.GRAY));
+        } else {
+            DEBUG_PLAYERS.add(id);
+            player.sendSystemMessage(
+                Component.literal("[SmartVillager] Villager thoughts ON — broadcasting every 5s within " + (int) DEBUG_RADIUS + "b.")
+                    .withStyle(ChatFormatting.GREEN));
+        }
+        return 1;
+    }
+
+    @SubscribeEvent
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (DEBUG_PLAYERS.isEmpty()) return;
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (level.getGameTime() % DEBUG_INTERVAL != 0) return;
+
+        for (ServerPlayer player : level.players()) {
+            if (!DEBUG_PLAYERS.contains(player.getUUID())) continue;
+
+            double r = DEBUG_RADIUS;
+            AABB box = new AABB(
+                player.getX() - r, player.getY() - r, player.getZ() - r,
+                player.getX() + r, player.getY() + r, player.getZ() + r
+            );
+
+            for (Villager v : level.getEntitiesOfClass(Villager.class, box)) {
+                String profession = v.getVillagerData().profession().unwrapKey()
+                    .map(k -> k.identifier().getPath())
+                    .orElse("?");
+
+                VillagerHealth health = v.getData(ModAttachments.VILLAGER_HEALTH);
+                VillagerHunger hunger = v.getData(ModAttachments.VILLAGER_HUNGER);
+                String uuid = v.getUUID().toString().substring(0, 8);
+
+                String thought = resolveThought(health, hunger);
+                ChatFormatting thoughtColor = resolveThoughtColor(health, hunger);
+
+                Component line = Component.literal("[" + profession + " #" + uuid + "] ")
+                    .withStyle(ChatFormatting.DARK_AQUA)
+                    .append(Component.literal("“" + thought + "”")
+                        .withStyle(thoughtColor));
+
+                player.sendSystemMessage(line);
+            }
+        }
+    }
+
+    private static String resolveThought(VillagerHealth health, VillagerHunger hunger) {
+        if (health.isSeekingHealing()) return "I need healing!";
+        if (hunger.isHungry())         return "I need food!";
+        if (health.isLow())            return "I am injured...";
+        return "Idle.";
+    }
+
+    private static ChatFormatting resolveThoughtColor(VillagerHealth health, VillagerHunger hunger) {
+        if (health.isSeekingHealing()) return ChatFormatting.RED;
+        if (hunger.isHungry())         return ChatFormatting.YELLOW;
+        if (health.isLow())            return ChatFormatting.GOLD;
+        return ChatFormatting.WHITE;
     }
 
     // -------------------------------------------------------------------------
@@ -117,8 +203,7 @@ public final class DebugCommands {
 
         if (found.isEmpty()) {
             player.sendSystemMessage(
-                Component.literal(NO_VILLAGE_MSG)
-                    .withStyle(ChatFormatting.RED));
+                Component.literal(NO_VILLAGE_MSG).withStyle(ChatFormatting.RED));
             return 0;
         }
 
@@ -130,8 +215,7 @@ public final class DebugCommands {
                 .withStyle(ChatFormatting.GOLD));
 
         if (contents.isEmpty()) {
-            player.sendSystemMessage(
-                Component.literal("  (empty)").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("  (empty)").withStyle(ChatFormatting.GRAY));
             return 0;
         }
 
@@ -156,8 +240,7 @@ public final class DebugCommands {
 
         if (found.isEmpty()) {
             player.sendSystemMessage(
-                Component.literal(NO_VILLAGE_MSG)
-                    .withStyle(ChatFormatting.RED));
+                Component.literal(NO_VILLAGE_MSG).withStyle(ChatFormatting.RED));
             return 0;
         }
 
