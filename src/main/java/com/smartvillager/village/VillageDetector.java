@@ -2,6 +2,7 @@ package com.smartvillager.village;
 
 import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
+import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -16,7 +17,12 @@ import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import org.slf4j.Logger;
 
 import java.util.Optional;
@@ -41,6 +47,41 @@ public final class VillageDetector {
     private static final Identifier PROF_FARMER    = Identifier.withDefaultNamespace("farmer");
     private static final Identifier PROF_GUARD     = Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "guard");
     private VillageDetector() {}
+
+    // -------------------------------------------------------------------------
+    // Permanent death + role replacement
+    // -------------------------------------------------------------------------
+
+    /**
+     * When a villager dies (any cause — combat, environment, starvation), remove
+     * them from the village roster permanently. The role is not filled immediately;
+     * chooseProfession() will prioritize restoring the lost profession at the next
+     * natural villager birth.
+     */
+    @SubscribeEvent
+    public static void onVillagerDeath(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof Villager villager)) return;
+        if (villager.level().isClientSide()) return;
+
+        ServerLevel level = (ServerLevel) villager.level();
+        UUID uuid = villager.getUUID();
+
+        VillageRegistry registry = VillageRegistry.get(level);
+        registry.all().stream()
+            .filter(v -> v.hasVillager(uuid))
+            .findFirst()
+            .ifPresent(village -> {
+                Identifier profession = village.getRoster().get(uuid);
+                village.removeVillager(uuid);
+                registry.setDirty();
+                LOGGER.info("[SmartVillager] Villager {} ({}) died permanently in village at {} — role queued for replacement at next birth",
+                    uuid, profession, village.getAnchor());
+                if (village.countProfession(profession) == 0) {
+                    LOGGER.warn("[SmartVillager] Critical role {} lost — village at {} has no remaining {}",
+                        profession, village.getAnchor(), profession);
+                }
+            });
+    }
 
     // -------------------------------------------------------------------------
     // Village detection + profession assignment
@@ -164,6 +205,7 @@ public final class VillageDetector {
             }
         } else {
             HungerSystem.tick(level, village, PROXIMITY_CHECK_INTERVAL);
+            HealthSystem.tick(level, village);
             if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
                 LibrarianCoordinator.tick(village);
             }
@@ -182,14 +224,17 @@ public final class VillageDetector {
         // Future branches will snapshot physical villager state here.
     }
 
-    /**
-     * Approximates what happened in the village during the abstract period.
-     * Stub — hunger/health/NeedQueue systems (branches 5-7) will fill this in.
-     */
     private static void runAbstractBatchUpdate(SmartVillage village, long elapsed) {
         LOGGER.debug("[SmartVillager] Abstract batch update for village at {} (roster size: {}, elapsed: {} ticks)",
             village.getAnchor(), village.getRoster().size(), elapsed);
         LibrarianCoordinator.abstractTick(village);
-        HungerSystem.abstractTick(village, elapsed);
+        Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
+        Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);
+        for (UUID uuid : died) {
+            Identifier profession = village.getRoster().get(uuid);
+            village.removeVillager(uuid);
+            LOGGER.info("[SmartVillager] Villager {} ({}) starved to death during abstract simulation in village at {}",
+                uuid, profession, village.getAnchor());
+        }
     }
 }

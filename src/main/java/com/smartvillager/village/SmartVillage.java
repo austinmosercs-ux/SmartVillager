@@ -79,6 +79,12 @@ public final class SmartVillage {
     private final VillageStockpile stockpile;
     private SimulationMode mode = SimulationMode.ABSTRACT;
     private Set<Identifier> shortages = Collections.emptySet();
+    // Runtime-only: per-villager notional HP used during abstract simulation.
+    // Not persisted — villagers start at full health after a server restart.
+    // Serialization will be added alongside attachment persistence in a later branch.
+    private final Map<UUID, Float> abstractHealth = new HashMap<>();
+
+    private static final float DEFAULT_ABSTRACT_HEALTH = 20.0f; // matches VillagerHealth.MAX
 
     public SmartVillage(UUID id, BlockPos anchor, ResourceKey<VillagerType> villagerTypeKey,
                         DyeColor merchantColor, Map<UUID, Identifier> roster,
@@ -117,6 +123,17 @@ public final class SmartVillage {
 
     public void removeVillager(UUID villagerUUID) {
         roster.remove(villagerUUID);
+        abstractHealth.remove(villagerUUID);
+    }
+
+    // --- abstract health (runtime-only, used by HealthSystem during abstract simulation) ---
+
+    public float getAbstractHealth(UUID uuid) {
+        return abstractHealth.getOrDefault(uuid, DEFAULT_ABSTRACT_HEALTH);
+    }
+
+    public void setAbstractHealth(UUID uuid, float hp) {
+        abstractHealth.put(uuid, hp);
     }
 
     public int countProfession(Identifier professionId) {

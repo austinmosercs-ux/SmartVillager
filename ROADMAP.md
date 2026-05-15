@@ -15,7 +15,7 @@ Nothing in Phase 2 or later runs correctly until all of these are stable.
 | 2 | `feature/village-registration` | Detect all naturally spawning vanilla villages and register them with the mod; assign starting rosters and biome-based Merchant colors at registration time; implement two-mode simulation — full simulation (chunks loaded, villagers physically move) when player is within ~128 blocks, abstract simulation (chunks unloaded, village state tracked as data with batch updates every few minutes) when player is far away; state is reconciled and full simulation resumes when player returns | In Review |
 | 3 | `feature/village-stockpile` | Shared chest/data structure attached to the village; Librarian as coordinator — tracks supply levels, flags shortages, drives NeedQueue requests | In Review |
 | 4 | `feature/villager-backpack` | Per-villager inventory with 15 slots + 4 armor slots — holds food, tools, carried items, and equipped gear | In Review |
-| 5 | `feature/hunger-system` | Hunger value per villager; depletion rate varies by role (Guard and active gatherers burn faster); eat behavior routing to shared food supply | |
+| 5 | `feature/hunger-system` | Hunger value per villager; depletion rate varies by role (Guard and active gatherers burn faster); eat behavior routing to shared food supply | In Review |
 | 6 | `feature/health-system` | Combat, environmental, and starvation damage; permanent death and role replacement; SEEK_HEALING behavior | |
 | 7 | `feature/need-queue` | Core village communication — NeedRequest structure (type, urgency, reward, poster); queue scoped per village; idle-state polling; request acceptance and completion | |
 

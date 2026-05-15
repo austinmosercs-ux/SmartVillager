@@ -12,6 +12,7 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.phys.AABB;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,24 +87,35 @@ public final class HungerSystem {
      * Approximates food consumed over an unloaded (abstract) period.
      *
      * For each villager in the roster, computes how many meals they would have
-     * needed and withdraws that food from the stockpile. Assumes full starting
-     * hunger — this is a simplification until snapshot/reconcile is wired up
-     * in the full→abstract and abstract→full transition hooks.
+     * needed and withdraws as much as the stockpile allows. Returns a map of
+     * UUID → missed meal count for any villager the stockpile could not fully
+     * feed; HealthSystem.abstractTick() uses this to apply starvation damage.
+     *
+     * Assumes full starting hunger — a simplification until snapshot/reconcile
+     * is wired in the full→abstract and abstract→full transition hooks.
      *
      * @param elapsedTicks ticks since the last abstract batch update
+     * @return map of villager UUID to number of meals the stockpile could not cover
      */
-    public static void abstractTick(SmartVillage village, long elapsedTicks) {
+    public static Map<UUID, Integer> abstractTick(SmartVillage village, long elapsedTicks) {
         VillageStockpile stockpile = village.getStockpile();
+        Map<UUID, Integer> missedMeals = new HashMap<>();
         for (Map.Entry<UUID, Identifier> entry : village.getRoster().entrySet()) {
             int meals = mealsNeeded(entry.getValue(), elapsedTicks);
+            int fed = 0;
             for (int i = 0; i < meals; i++) {
-                if (!tryWithdrawFood(stockpile)) {
-                    // Stockpile ran out — villager starved for the rest of this period.
-                    // Branch 6 will apply health damage here.
+                if (tryWithdrawFood(stockpile)) {
+                    fed++;
+                } else {
                     break;
                 }
             }
+            int missed = meals - fed;
+            if (missed > 0) {
+                missedMeals.put(entry.getKey(), missed);
+            }
         }
+        return missedMeals;
     }
 
     /**
