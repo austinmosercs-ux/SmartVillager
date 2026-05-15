@@ -55,7 +55,9 @@ public final class VillagerBackpack {
                 if (slot >= 0 && slot < ITEM_SLOTS && !stack.isEmpty()) {
                     b.items[slot] = stack.copy();
                 }
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException _) {
+                // malformed slot key — skip
+            }
         });
         armorMap.forEach((key, stack) -> {
             try {
@@ -63,7 +65,9 @@ public final class VillagerBackpack {
                 if (slot >= 0 && slot < ARMOR_SLOTS && !stack.isEmpty()) {
                     b.armor[slot] = stack.copy();
                 }
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException _) {
+                // malformed slot key — skip
+            }
         });
         return b;
     }
