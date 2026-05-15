@@ -12,13 +12,13 @@
       "projectName": "yippeespider",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/Users/austinmoser/SmartVillager/build/moddev/clientRunProgramArgs.txt"
+        "@C:\\Users\\austi\\OneDrive\\Documents\\SmartVillager\\build\\moddev\\clientRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/Users/austinmoser/SmartVillager/build/moddev/clientRunVmArgs.txt",
-        "-Dfml.modFolders\u003dmodid%%/Users/austinmoser/SmartVillager/bin/main"
+        "@C:\\Users\\austi\\OneDrive\\Documents\\SmartVillager\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dsmartvillager%%C:\\Users\\austi\\OneDrive\\Documents\\SmartVillager\\bin\\main"
       ],
-      "cwd": "${workspaceFolder}/run",
+      "cwd": "${workspaceFolder}\\run",
       "env": {},
       "console": "internalConsole",
       "shortenCommandLine": "none"
@@ -34,13 +34,13 @@
       "projectName": "yippeespider",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/Users/austinmoser/SmartVillager/build/moddev/serverRunProgramArgs.txt"
+        "@C:\\Users\\austi\\OneDrive\\Documents\\SmartVillager\\build\\moddev\\serverRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/Users/austinmoser/SmartVillager/build/moddev/serverRunVmArgs.txt",
-        "-Dfml.modFolders\u003dmodid%%/Users/austinmoser/SmartVillager/bin/main"
+        "@C:\\Users\\austi\\OneDrive\\Documents\\SmartVillager\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dsmartvillager%%C:\\Users\\austi\\OneDrive\\Documents\\SmartVillager\\bin\\main"
       ],
-      "cwd": "${workspaceFolder}/run",
+      "cwd": "${workspaceFolder}\\run",
       "env": {},
       "console": "internalConsole",
       "shortenCommandLine": "none"
