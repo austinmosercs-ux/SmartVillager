@@ -558,3 +558,84 @@ Build in this order to avoid dependency issues:
 - The village should function and evolve whether or not the player is present
 - Villages run in two modes: full simulation (chunks loaded, player within ~128 blocks) and abstract simulation (chunks unloaded, state tracked as data with batch updates). Never force-load village chunks permanently — this would stack hundreds of MB of RAM per village
 - Abstract simulation must track at minimum: per-villager hunger and health, shared inventory contents, NeedQueue state, build queue progress, and any villager deaths — enough to reconcile correctly when full simulation resumes
+
+---
+
+## Key Files
+
+| File | Responsibility |
+|---|---|
+| `src/main/java/com/smartvillager/SmartVillager.java` | Main mod entry point that registers professions and entity attachments |
+| `src/main/java/com/smartvillager/registration/ModProfessions.java` | Registers custom Guard and Merchant villager professions with their POI associations |
+| `src/main/java/com/smartvillager/registration/ModAttachments.java` | Defines NeoForge entity attachments for villager backpack, hunger, and health data |
+| `src/main/java/com/smartvillager/ai/ProfessionBehaviorRegistry.java` | Centralizes profession-specific Brain behavior injection hooked into villager brain refresh |
+| `src/main/java/com/smartvillager/village/SimulationMode.java` | Enum for full vs. abstract village simulation modes based on player proximity |
+| `src/main/java/com/smartvillager/village/MerchantColor.java` | Maps villager biome types to merchant robe color palettes with random selection per village |
+| `src/main/java/com/smartvillager/village/VillageRegistry.java` | Persisted SavedData registry mapping villages by UUID and Bell anchor position |
+| `src/main/java/com/smartvillager/village/VillageStockpile.java` | Shared village inventory for depositing and withdrawing items tracked by ItemStack counts |
+| `src/main/java/com/smartvillager/village/LibrarianCoordinator.java` | Scans village stockpile against thresholds to detect and flag shortages for NeedQueue posting |
+| `src/main/java/com/smartvillager/village/VillagerInteractionHandler.java` | Blocks vanilla villager trading entirely to route interactions through mod systems |
+| `src/main/java/com/smartvillager/village/SmartVillage.java` | Stores all persistent village data including roster, stockpile, threat state, and abstract health tracking |
+| `src/main/java/com/smartvillager/village/VillageDetector.java` | Detects vanilla villages, assigns professions at birth, and switches simulation modes based on player proximity |
+| `src/main/java/com/smartvillager/inventory/ArmorSlot.java` | Enum for the four armor equipment slots in villager backpack |
+| `src/main/java/com/smartvillager/inventory/VillagerBackpack.java` | Per-villager personal inventory with 15 general slots and 4 armor slots, serializable and defensive |
+| `src/main/java/com/smartvillager/hunger/VillagerHunger.java` | Per-villager hunger value attachment with depletion and restoration mechanics |
+| `src/main/java/com/smartvillager/hunger/HungerDepletionRates.java` | Maps profession identifiers to hunger depletion rates (fast/normal/slow) |
+| `src/main/java/com/smartvillager/hunger/HungerSystem.java` | Manages hunger depletion and stockpile-based feeding for both full and abstract simulations |
+| `src/main/java/com/smartvillager/health/HealthSystem.java` | Applies starvation damage and manages health state in both full and abstract simulations |
+| `src/main/java/com/smartvillager/health/VillagerHealth.java` | Per-villager health attachment that syncs with vanilla entity and tracks healing needs |
+| `src/main/java/com/smartvillager/needqueue/NeedPriority.java` | Enum (low/normal/high/urgent) for prioritizing need requests |
+| `src/main/java/com/smartvillager/needqueue/NeedTypes.java` | Defines all need request type identifiers for village communication (escort, healing, tools, etc.) |
+| `src/main/java/com/smartvillager/needqueue/NeedRequest.java` | Immutable request record with id, type, priority, poster, itemData, and acceptance status |
+| `src/main/java/com/smartvillager/needqueue/VillageNeedQueue.java` | Per-village queue with open and in-progress request lists, supporting posting/acceptance/completion/expiry |
+| `src/main/java/com/smartvillager/needqueue/NeedQueue.java` | System-level stateless logic syncing LibrarianCoordinator shortages to queue posts and expiring stale requests |
+| `src/main/java/com/smartvillager/mixin/MixinVillager.java` | Mixin hook injecting profession-specific behavior into Villager.refreshBrain() call chain |
+| `src/main/java/com/smartvillager/command/DebugCommands.java` | Debug commands for listing nearby villagers, viewing/adding stockpile items, and broadcasting villager thoughts |
+| `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, and civilian shelter orders during threat alerts |
+| `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates circular waypoint patrols around the Bell anchor for Guards during peaceful periods |
+
+---
+
+## Patterns
+
+Where to register or store new things:
+
+- **New profession behavior** — register a handler in `ProfessionBehaviorRegistry` via `ProfessionBehaviorRegistry.register(professionKey, handler)` during `FMLCommonSetupEvent`
+- **New profession** — declare in `ModProfessions` and register its POI association; add to `VillageDetector.chooseProfession()` if it should be auto-assigned at birth
+- **New need type** — add a constant to `NeedTypes`; post via `NeedQueue.postRequest()` and check via `VillageNeedQueue.hasOpenRequest()`
+- **New attachment** — declare in `ModAttachments` and register on `ATTACHMENT_TYPES`; access via `entity.getData(ModAttachments.YOUR_ATTACHMENT)`
+- **New game event handler** — add a `@SubscribeEvent` method to an `@EventBusSubscriber` class; wire mod-bus events in `SmartVillager` constructor
+- **New per-villager data** — store as an attachment in `ModAttachments`; for village-scoped data, store on `SmartVillage` and serialize through `SmartVillage.CODEC`
+
+---
+
+## Rules
+
+- **Check Key Files first** — before exploring the codebase for an unknown file or class, scan the Key Files table above; the responsible file is almost always listed there
+- **Use existing registries** — never bypass `ModProfessions`, `ModAttachments`, `ProfessionBehaviorRegistry`, or `VillageRegistry`; always extend them instead of creating parallel structures
+- **Finish the task first** — complete the requested change before suggesting refactors, improvements, or follow-up work
+- **Update Key Files before finishing** — every new Java file must have a row added to the Key Files table in the same task that created it
+
+---
+
+## Current State
+
+| Property | Value |
+|---|---|
+| Mod version | 0.2.4 |
+| Minecraft version | 26.1.2 |
+| NeoForge version | 26.1.2.44-beta |
+
+**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle
+
+**Branch pattern:** `feature/description` and `bugfix/description`
+
+**Integration branch:** `dev` (not `main`) — all feature branches merge to `dev` first
+
+**Commit format:** `feat:` or `fix:` prefix required
+
+---
+
+## Maintenance Rules
+
+- Whenever a new Java file is created, add a row to the Key Files table above with its path and a one-line description of its responsibility before finishing the task.
