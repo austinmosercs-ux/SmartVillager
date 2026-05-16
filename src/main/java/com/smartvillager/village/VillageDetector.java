@@ -2,6 +2,7 @@ package com.smartvillager.village;
 
 import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
+import com.smartvillager.cleric.ClericHealingSystem;
 import com.smartvillager.defense.GuardDefenseSystem;
 import com.smartvillager.defense.PatrolSystem;
 import com.smartvillager.health.HealthSystem;
@@ -213,6 +214,7 @@ public final class VillageDetector {
         } else {
             HungerSystem.tick(level, village, PROXIMITY_CHECK_INTERVAL);
             HealthSystem.tick(level, village);
+            ClericHealingSystem.tick(level, village, level.getGameTime());
             GuardDefenseSystem.tick(level, village, level.getGameTime());
             PatrolSystem.tick(level, village, level.getGameTime());
             if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
@@ -242,6 +244,7 @@ public final class VillageDetector {
         GuardDefenseSystem.abstractTick(village);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);
+        ClericHealingSystem.abstractTick(village);
         for (UUID uuid : died) {
             Identifier profession = village.getRoster().get(uuid);
             village.removeVillager(uuid);

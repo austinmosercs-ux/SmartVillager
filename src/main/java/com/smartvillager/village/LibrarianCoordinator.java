@@ -2,6 +2,7 @@ package com.smartvillager.village;
 
 import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
+import com.smartvillager.cleric.ClericHealingSystem;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
@@ -33,7 +34,8 @@ public final class LibrarianCoordinator {
     public static final Identifier SHORTAGE_HOE         = Identifier.fromNamespaceAndPath(NS, "shortage/hoe");
     public static final Identifier SHORTAGE_AXE         = Identifier.fromNamespaceAndPath(NS, "shortage/axe");
     public static final Identifier SHORTAGE_SHOVEL      = Identifier.fromNamespaceAndPath(NS, "shortage/shovel");
-    public static final Identifier SHORTAGE_FISHING_ROD = Identifier.fromNamespaceAndPath(NS, "shortage/fishing_rod");
+    public static final Identifier SHORTAGE_FISHING_ROD      = Identifier.fromNamespaceAndPath(NS, "shortage/fishing_rod");
+    public static final Identifier SHORTAGE_HEALING_SUPPLIES = Identifier.fromNamespaceAndPath(NS, "shortage/healing_supplies");
 
     // --- Minimum supply thresholds ---
     private static final int FOOD_MIN        = 32;
@@ -45,7 +47,8 @@ public final class LibrarianCoordinator {
     private static final int HOE_MIN         = 1;
     private static final int AXE_MIN         = 1;
     private static final int SHOVEL_MIN      = 1;
-    private static final int FISHING_ROD_MIN = 1;
+    private static final int FISHING_ROD_MIN     = 1;
+    private static final int HEALING_SUPPLY_MIN  = 4;
 
     // --- Item IDs ---
     public static final Set<Identifier> FOOD_ITEMS = Set.of(
@@ -110,7 +113,9 @@ public final class LibrarianCoordinator {
         if (stockpile.getCount(IRON_HOE)       < HOE_MIN)         shortages.add(SHORTAGE_HOE);
         if (stockpile.getCount(IRON_AXE)       < AXE_MIN)         shortages.add(SHORTAGE_AXE);
         if (stockpile.getCount(IRON_SHOVEL)    < SHOVEL_MIN)      shortages.add(SHORTAGE_SHOVEL);
-        if (stockpile.getCount(FISHING_ROD)    < FISHING_ROD_MIN) shortages.add(SHORTAGE_FISHING_ROD);
+        if (stockpile.getCount(FISHING_ROD)    < FISHING_ROD_MIN)     shortages.add(SHORTAGE_FISHING_ROD);
+        if (stockpile.getCount(ClericHealingSystem.HEALING_SUPPLY) < HEALING_SUPPLY_MIN)
+                                                                        shortages.add(SHORTAGE_HEALING_SUPPLIES);
 
         return shortages;
     }

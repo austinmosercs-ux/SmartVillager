@@ -1,6 +1,7 @@
 package com.smartvillager.needqueue;
 
 import com.mojang.logging.LogUtils;
+import com.smartvillager.SmartVillager;
 import com.smartvillager.village.LibrarianCoordinator;
 import com.smartvillager.village.SmartVillage;
 import net.minecraft.resources.Identifier;
@@ -35,29 +36,35 @@ public final class NeedQueue {
     /** Open requests expire after this many ticks if never accepted (~10 minutes). */
     private static final long EXPIRY_TICKS = 12_000L;
 
+    // Healing supply item ID — kept local to avoid importing ClericHealingSystem (circular dep).
+    private static final Identifier HEALING_SUPPLY =
+        Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "healing_supply");
+
     // Maps each shortage key → (need type, specific item, priority) so the
     // Librarian's shortage flags translate directly into actionable requests.
-    private static final Map<Identifier, ShortageMapping> SHORTAGE_TO_REQUEST = Map.of(
-        LibrarianCoordinator.SHORTAGE_FOOD,
-            new ShortageMapping(NeedTypes.NEED_RESTOCK,   Identifier.withDefaultNamespace("bread"),         NeedPriority.HIGH),
-        LibrarianCoordinator.SHORTAGE_IRON_ORE,
-            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("iron_ore"),       NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_COAL,
-            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("coal"),           NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_IRON_INGOT,
-            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("iron_ingot"),     NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_ARROWS,
-            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("arrow"),          NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_PICKAXE,
-            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_pickaxe"),   NeedPriority.HIGH),
-        LibrarianCoordinator.SHORTAGE_HOE,
-            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_hoe"),       NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_AXE,
-            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_axe"),       NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_SHOVEL,
-            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_shovel"),    NeedPriority.NORMAL),
-        LibrarianCoordinator.SHORTAGE_FISHING_ROD,
-            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("fishing_rod"),    NeedPriority.NORMAL)
+    private static final Map<Identifier, ShortageMapping> SHORTAGE_TO_REQUEST = Map.ofEntries(
+        Map.entry(LibrarianCoordinator.SHORTAGE_FOOD,
+            new ShortageMapping(NeedTypes.NEED_RESTOCK,   Identifier.withDefaultNamespace("bread"),         NeedPriority.HIGH)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_IRON_ORE,
+            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("iron_ore"),       NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_COAL,
+            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("coal"),           NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_IRON_INGOT,
+            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("iron_ingot"),     NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_ARROWS,
+            new ShortageMapping(NeedTypes.NEED_MATERIALS, Identifier.withDefaultNamespace("arrow"),          NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_PICKAXE,
+            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_pickaxe"),   NeedPriority.HIGH)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_HOE,
+            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_hoe"),       NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_AXE,
+            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_axe"),       NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_SHOVEL,
+            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("iron_shovel"),    NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_FISHING_ROD,
+            new ShortageMapping(NeedTypes.NEED_TOOLS,     Identifier.withDefaultNamespace("fishing_rod"),    NeedPriority.NORMAL)),
+        Map.entry(LibrarianCoordinator.SHORTAGE_HEALING_SUPPLIES,
+            new ShortageMapping(NeedTypes.NEED_MATERIALS, HEALING_SUPPLY,                                    NeedPriority.HIGH))
     );
 
     // -------------------------------------------------------------------------

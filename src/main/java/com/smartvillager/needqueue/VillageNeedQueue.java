@@ -147,6 +147,30 @@ public final class VillageNeedQueue {
         return open.stream().filter(r -> r.getType().equals(type)).toList();
     }
 
+    /**
+     * Returns the highest-priority open request of the given type without removing it.
+     * Returns empty if no matching open request exists.
+     */
+    public Optional<NeedRequest> findHighestPriorityOpen(Identifier type) {
+        NeedRequest best = null;
+        for (NeedRequest r : open) {
+            if (!r.getType().equals(type)) continue;
+            if (best == null || r.getPriority().order() > best.getPriority().order()) {
+                best = r;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
+    /**
+     * Cancels all open and in-progress requests from the given poster of the given type.
+     * Used when a patient is healed and their request is no longer relevant.
+     */
+    public void cancelByPosterAndType(UUID poster, Identifier type) {
+        open.removeIf(r -> r.getType().equals(type) && r.getPoster().equals(poster));
+        inProgress.removeIf(r -> r.getType().equals(type) && r.getPoster().equals(poster));
+    }
+
     public List<NeedRequest> allOpen() {
         return Collections.unmodifiableList(open);
     }

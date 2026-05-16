@@ -594,6 +594,7 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, and civilian shelter orders during threat alerts |
 | `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates circular waypoint patrols around the Bell anchor for Guards during peaceful periods |
 | `src/main/java/com/smartvillager/daynight/DayNightCycle.java` | Utility for night detection and guard night-rotation logic; gates resource gathering to daytime only |
+| `src/main/java/com/smartvillager/cleric/ClericHealingSystem.java` | Drives Cleric healing of injured villagers and players, potion brewing subrole, and abstract-sim healing from stockpile supply |
 
 ---
 
