@@ -8,6 +8,7 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.DyeColor;
@@ -72,7 +73,11 @@ public final class SmartVillage {
         VillageNeedQueue.CODEC
             .optionalFieldOf("need_queue")
             .xmap(opt -> opt.orElseGet(VillageNeedQueue::new), Optional::of)
-            .forGetter(SmartVillage::getNeedQueue)
+            .forGetter(SmartVillage::getNeedQueue),
+        StockpileChestTracker.CODEC
+            .optionalFieldOf("chest_tracker")
+            .xmap(opt -> opt.orElseGet(StockpileChestTracker::new), Optional::of)
+            .forGetter(SmartVillage::getChestTracker)
     ).apply(i, SmartVillage::new));
 
     private final UUID id;
@@ -83,6 +88,7 @@ public final class SmartVillage {
     private long lastAbstractUpdate;
     private final VillageStockpile stockpile;
     private final VillageNeedQueue needQueue;
+    private final StockpileChestTracker chestTracker;
     private SimulationMode mode = SimulationMode.ABSTRACT;
     private Set<Identifier> shortages = Collections.emptySet();
     // Runtime-only: per-villager notional HP used during abstract simulation.
@@ -102,7 +108,7 @@ public final class SmartVillage {
     public SmartVillage(UUID id, BlockPos anchor, ResourceKey<VillagerType> villagerTypeKey,
                         DyeColor merchantColor, Map<UUID, Identifier> roster,
                         long lastAbstractUpdate, VillageStockpile stockpile,
-                        VillageNeedQueue needQueue) {
+                        VillageNeedQueue needQueue, StockpileChestTracker chestTracker) {
         this.id = id;
         this.anchor = anchor;
         this.villagerTypeKey = villagerTypeKey;
@@ -111,6 +117,7 @@ public final class SmartVillage {
         this.lastAbstractUpdate = lastAbstractUpdate;
         this.stockpile = stockpile;
         this.needQueue = needQueue;
+        this.chestTracker = chestTracker;
     }
 
     public static SmartVillage create(BlockPos anchor, ResourceKey<VillagerType> typeKey,
@@ -123,7 +130,8 @@ public final class SmartVillage {
             new HashMap<>(),
             gameTime,
             new VillageStockpile(),
-            new VillageNeedQueue()
+            new VillageNeedQueue(),
+            new StockpileChestTracker()
         );
     }
 
@@ -183,6 +191,18 @@ public final class SmartVillage {
     // --- stockpile ---
 
     public VillageStockpile getStockpile() { return stockpile; }
+
+    public StockpileChestTracker getChestTracker() { return chestTracker; }
+
+    /** Called by VillageDetector on ABSTRACT → FULL transition. */
+    public void activateFullSim(ServerLevel level) {
+        stockpile.activateChests(level, chestTracker);
+    }
+
+    /** Called by VillageDetector on FULL → ABSTRACT transition. */
+    public void activateAbstractSim(ServerLevel level) {
+        stockpile.deactivateChests(level, chestTracker);
+    }
 
     // --- need queue ---
 

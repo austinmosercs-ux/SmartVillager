@@ -667,7 +667,7 @@ Where to register or store new things:
 - **New attachment** — declare in `ModAttachments` and register on `ATTACHMENT_TYPES`; access via `entity.getData(ModAttachments.YOUR_ATTACHMENT)`
 - **New game event handler** — add a `@SubscribeEvent` method to an `@EventBusSubscriber` class; wire mod-bus events in `SmartVillager` constructor
 - **New per-villager data** — store as an attachment in `ModAttachments`; for village-scoped data, store on `SmartVillage` and serialize through `SmartVillage.CODEC`
-- **New stockpile chest** — register via `StockpileChestTracker.register(villageId, blockPos)`; the tracker persists positions through `SmartVillage.CODEC`; never write to or read from a chest that isn't in the tracker
+- **New stockpile chest** — register via `village.getChestTracker().register(blockPos)`; the tracker persists positions through `SmartVillage.CODEC`; never write to or read from a chest that isn't in the tracker
 - **New village-owned entity** — add its UUID list to `SmartVillage`; listen for entity remove events to detect death; never use vanilla natural-spawn mechanics for intentional village entities
 
 ---

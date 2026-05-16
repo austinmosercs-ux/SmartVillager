@@ -197,9 +197,9 @@ public final class VillageDetector {
 
         if (village.getMode() != newMode) {
             if (newMode == SimulationMode.FULL) {
-                onTransitionToFull(village);
+                onTransitionToFull(level, village);
             } else {
-                onTransitionToAbstract(village);
+                onTransitionToAbstract(level, village);
             }
             village.setMode(newMode);
         }
@@ -224,16 +224,16 @@ public final class VillageDetector {
         }
     }
 
-    private static void onTransitionToFull(SmartVillage village) {
+    private static void onTransitionToFull(ServerLevel level, SmartVillage village) {
         LOGGER.debug("[SmartVillager] Village at {} → FULL simulation (player entered range)",
             village.getAnchor());
-        // Future branches will reconcile abstract state onto physical villagers here.
+        village.activateFullSim(level);
     }
 
-    private static void onTransitionToAbstract(SmartVillage village) {
+    private static void onTransitionToAbstract(ServerLevel level, SmartVillage village) {
         LOGGER.debug("[SmartVillager] Village at {} → ABSTRACT simulation (player left range)",
             village.getAnchor());
-        // Future branches will snapshot physical villager state here.
+        village.activateAbstractSim(level);
     }
 
     private static void runAbstractBatchUpdate(SmartVillage village, long elapsed, long currentTick) {
