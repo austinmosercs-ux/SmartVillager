@@ -2,6 +2,8 @@ package com.smartvillager.village;
 
 import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
+import com.smartvillager.defense.GuardDefenseSystem;
+import com.smartvillager.defense.PatrolSystem;
 import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
 import com.smartvillager.needqueue.NeedQueue;
@@ -211,6 +213,8 @@ public final class VillageDetector {
         } else {
             HungerSystem.tick(level, village, PROXIMITY_CHECK_INTERVAL);
             HealthSystem.tick(level, village);
+            GuardDefenseSystem.tick(level, village, level.getGameTime());
+            PatrolSystem.tick(level, village, level.getGameTime());
             if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
                 LibrarianCoordinator.tick(village);
                 NeedQueue.tick(village, level.getGameTime());
@@ -235,6 +239,7 @@ public final class VillageDetector {
             village.getAnchor(), village.getRoster().size(), elapsed);
         LibrarianCoordinator.abstractTick(village);
         NeedQueue.abstractTick(village, currentTick);
+        GuardDefenseSystem.abstractTick(village);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);
         for (UUID uuid : died) {

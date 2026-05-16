@@ -90,6 +90,12 @@ public final class SmartVillage {
     // Serialization will be added alongside attachment persistence in a later branch.
     private final Map<UUID, Float> abstractHealth = new HashMap<>();
 
+    // Runtime-only threat alert state. Not persisted — resets on server restart.
+    // Full sim sets and clears this; abstract sim preserves the last known state.
+    private boolean threatAlertActive = false;
+    private long lastThreatSeenTick = 0L;
+    private long threatAlertStartTick = 0L;
+
     private static final float DEFAULT_ABSTRACT_HEALTH = 20.0f; // matches VillagerHealth.MAX
 
     @SuppressWarnings("java:S107") // all parameters are codec-driven fields; no meaningful grouping exists
@@ -188,6 +194,25 @@ public final class SmartVillage {
 
     public void setShortages(Set<Identifier> shortages) {
         this.shortages = Set.copyOf(shortages);
+    }
+
+    // --- threat alert (runtime-only, managed by GuardDefenseSystem) ---
+
+    public boolean isThreatAlertActive() { return threatAlertActive; }
+    public long getLastThreatSeenTick()  { return lastThreatSeenTick; }
+    public long getThreatAlertStartTick(){ return threatAlertStartTick; }
+
+    /** Activates the alert (or refreshes the last-seen tick if already active). */
+    public void activateThreatAlert(long currentTick) {
+        if (!threatAlertActive) {
+            threatAlertStartTick = currentTick;
+        }
+        threatAlertActive = true;
+        lastThreatSeenTick = currentTick;
+    }
+
+    public void clearThreatAlert() {
+        threatAlertActive = false;
     }
 
     // --- getters ---
