@@ -27,7 +27,7 @@ Build these once the foundation is solid. Branches 11–14 can be developed in p
 | # | Branch | What it covers | Status |
 |---|---|---|---|
 | 8 | `feature/guard-defense` | Guard perimeter patrol routes; threat detection; THREAT_ALERT broadcast; non-combat villagers enter SHELTER state; Cleric notified after fight | |
-| 9 | `feature/day-night-cycle` | Sleep enforcement for all non-Guard villagers; Guard night rotation; no resource gathering runs allowed after dark | |
+| 9 | `feature/day-night-cycle` | Sleep enforcement for all non-Guard villagers; Guard night rotation; no resource gathering runs allowed after dark | In Progress |
 | 10 | `feature/cleric-healing` | Villager healing triggered by health threshold or NEED_HEALING request; potion brewing subrole; player proximity healing from same supply pool | |
 | 11 | `feature/food-chain` | Farmer (crops primary + wood subrole), Fisherman (fish primary + sand/clay/flint subrole), Shepherd (animal tending primary + byproduct supply subrole), Butcher (meat processing primary + husbandry subrole), Leatherworker (leather goods primary + flex subrole) — all deposit to shared inventory | |
 | 12 | `feature/toolsmith-mining` | Toolsmith primary tool crafting; mining subrole: reads Cartographer cave data, posts NEED_ESCORT if area is flagged, mines ore and coal, deposits surplus to shared inventory for Weaponsmith and Armorer | |

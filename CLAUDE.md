@@ -593,6 +593,7 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/command/DebugCommands.java` | Debug commands for listing nearby villagers, viewing/adding stockpile items, and broadcasting villager thoughts |
 | `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, and civilian shelter orders during threat alerts |
 | `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates circular waypoint patrols around the Bell anchor for Guards during peaceful periods |
+| `src/main/java/com/smartvillager/daynight/DayNightCycle.java` | Utility for night detection and guard night-rotation logic; gates resource gathering to daytime only |
 
 ---
 

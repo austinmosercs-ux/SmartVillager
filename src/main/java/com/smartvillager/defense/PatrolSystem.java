@@ -1,6 +1,7 @@
 package com.smartvillager.defense;
 
 import com.smartvillager.SmartVillager;
+import com.smartvillager.daynight.DayNightCycle;
 import com.smartvillager.village.SmartVillage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -57,13 +58,22 @@ public final class PatrolSystem {
         if (gameTick % TICK_INTERVAL != 0) return;
         if (village.isThreatAlertActive()) return;
 
+        // Count guards first so night-duty threshold is computed correctly.
+        int totalGuards = (int) village.getRoster().values().stream()
+            .filter(PROF_GUARD::equals)
+            .count();
+
+        boolean night = DayNightCycle.isNight(level);
         List<BlockPos> waypoints = generateWaypoints(village.getAnchor());
 
-        for (Map.Entry<UUID, Identifier> entry : village.getRoster().entrySet()) {
-            if (!PROF_GUARD.equals(entry.getValue())) continue;
-            if (!(level.getEntity(entry.getKey()) instanceof Villager guard)) continue;
-            tickGuardPatrol(guard, waypoints);
-        }
+        village.getRoster().entrySet().stream()
+            .filter(e -> PROF_GUARD.equals(e.getValue()))
+            .map(e -> level.getEntity(e.getKey()))
+            .filter(Villager.class::isInstance)
+            .map(e -> (Villager) e)
+            // Off-duty guards skip patrol at night — vanilla sleep behavior takes over.
+            .filter(guard -> !night || DayNightCycle.isGuardOnNightDuty(guard.getUUID(), totalGuards))
+            .forEach(guard -> tickGuardPatrol(guard, waypoints));
     }
 
     // -------------------------------------------------------------------------
