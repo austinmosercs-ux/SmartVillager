@@ -13,7 +13,7 @@ Nothing in Phase 2 or later runs correctly until all of these are stable.
 |---|---|---|---|
 | 1 | `feature/professions-workblocks` | Register Guard and Merchant as the only two custom professions; override behavior entry points for all vanilla professions; workblocks serve as job site anchors only, not profession gates | Done |
 | 2 | `feature/village-registration` | Detect all naturally spawning vanilla villages and register them with the mod; assign starting rosters and biome-based Merchant colors at registration time; implement two-mode simulation — full simulation (chunks loaded, villagers physically move) when player is within ~128 blocks, abstract simulation (chunks unloaded, village state tracked as data with batch updates every few minutes) when player is far away; state is reconciled and full simulation resumes when player returns | Done |
-| 3 | `feature/village-stockpile` | Shared chest/data structure attached to the village; Librarian as coordinator — tracks supply levels, flags shortages, drives NeedQueue requests | Done |
+| 3 | `feature/village-stockpile` | Physical chest network in the world (StockpileChestTracker tracks BlockPos list; VillageStockpile reads/writes actual ChestBlockEntity tile entities); villagers physically path to a chest to deposit or withdraw; Librarian scans chest contents to flag shortages; abstract sim snapshots chest contents to SmartVillage when chunks unload | Redesign Needed |
 | 4 | `feature/villager-backpack` | Per-villager inventory with 15 slots + 4 armor slots — holds food, tools, carried items, and equipped gear | In Review |
 | 5 | `feature/hunger-system` | Hunger value per villager; depletion rate varies by role (Guard and active gatherers burn faster); eat behavior routing to shared food supply | Done |
 | 6 | `feature/health-system` | Combat, environmental, and starvation damage; permanent death and role replacement; SEEK_HEALING behavior | |
@@ -26,7 +26,8 @@ Build these once the foundation is solid. Branches 11–14 can be developed in p
 
 | # | Branch | What it covers | Status |
 |---|---|---|---|
-| 8 | `feature/guard-defense` | Guard perimeter patrol routes; threat detection; THREAT_ALERT broadcast; non-combat villagers enter SHELTER state; Cleric notified after fight | |
+| 8 | `feature/guard-defense` | Guard perimeter patrol routes with mandatory stockpile chest cluster waypoint; threat detection; THREAT_ALERT broadcast; one Guard per Bell designated as chest guardian during alert (holds position at storehouse); non-combat villagers enter SHELTER state; Cleric notified after fight | Done |
+| 8b | `feature/iron-golem-defense` | Village-commissioned iron golems stationed at stockpile storehouse; Librarian triggers Armorer to build golem when prosperity threshold + 36 iron ingots in stock; golem cap = 1 per Bell; golem UUID tracked on SmartVillage; death detection via entity remove event; replacement cooldown of one in-game day; abstract sim tracks golem health and applies threat damage | |
 | 9 | `feature/day-night-cycle` | Sleep enforcement for all non-Guard villagers; Guard night rotation; no resource gathering runs allowed after dark | In Progress |
 | 10 | `feature/cleric-healing` | Villager healing triggered by health threshold or NEED_HEALING request; potion brewing subrole; player proximity healing from same supply pool | |
 | 11 | `feature/food-chain` | Farmer (crops primary + wood subrole), Fisherman (fish primary + sand/clay/flint subrole), Shepherd (animal tending primary + byproduct supply subrole), Butcher (meat processing primary + husbandry subrole), Leatherworker (leather goods primary + flex subrole) — all deposit to shared inventory | |
@@ -75,15 +76,18 @@ These systems connect the Phase 2 behaviors into a functioning village network.
 | In Progress | Currently in development |
 | In Review | Final checks before merge |
 | Done | Merged and released |
+| Redesign Needed | Previously completed but design has changed — requires rework before dependent systems are built |
 
 ---
 
 ## Notes
 
 - **Branches 1–7** are the foundation — nothing else runs correctly until all of these are merged.
+- **Branch 3 (Stockpile)** needs a redesign from virtual data to physical chests — this is a breaking change to VillageStockpile; do this before any system that reads or writes stockpile data is finalized.
 - **Branch 7 (NeedQueue)** is the backbone of the entire mod — take extra time here. Every system in Phase 2 and beyond depends on it.
+- **Branch 8b (Iron Golem)** depends on branch 3 (stockpile chests) being stable first — the golem is commissioned by consuming iron ingots from the physical chests, so the chest read/write path must be solid.
 - **Branches 11–14** can be developed in parallel once Phase 1 is stable — they are independent of each other.
-- **Branch 14 (Mason build)** should be the last of the Phase 2 branches to finish — it pulls on the tool supply (12) and defense supply (13) chains which need to be flowing first.
+- **Branch 14 (Mason build)** should be the last of the Phase 2 branches to finish — it pulls on the tool supply (12) and defense supply (13) chains which need to be flowing first. Mason storehouse expansion (adding new chests to the network) is part of this branch.
 - **Branch 16 (Cartographer)** ties together multiple chains — build it after the chains it feeds (food, toolsmith, mason) are working.
 - **Branch 17 (Merchant shop)** is the only player-facing trade feature — build it after the production chains are producing real inventory.
 - Inter-village trade caravans are a stretch goal and not listed — add a branch if the core is stable and there is time.

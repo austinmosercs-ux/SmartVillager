@@ -24,9 +24,10 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 **Capacity:** Each Bell supports exactly 3 Guards. Guards claim a Bell as their assigned post at birth — once a Bell is at capacity, no new Guards are assigned to it until a slot opens (Guard dies or a new Bell is built). Multiple Bells in a village each have their own Guard unit. All Guards across all Bells respond to a village-wide THREAT_ALERT regardless of which Bell they are assigned to. Adding Bells is the only way to grow the Guard force — this is managed through the Mason build queue as the village prospers.
 
 **Primary role:** Village defense and combat
-- Runs perimeter patrol routes around the village boundary during the day; one or two Guards rotate on night duty
-- On threat detection, broadcasts `THREAT_ALERT` — non-combat villagers enter `SHELTER` state, Cleric prepares to assist
-- Engages hostile mobs in melee, prioritizing threats closest to non-combat villagers
+- Runs perimeter patrol routes around the village boundary during the day; patrol waypoints include the stockpile chest cluster as a mandatory stop — Guards physically pass through the storehouse area on every patrol loop
+- One or two Guards rotate on night duty; the night-rotation Guard is stationed at or near the stockpile chests rather than the full perimeter
+- On threat detection, broadcasts `THREAT_ALERT` — non-combat villagers enter `SHELTER` state, Cleric prepares to assist; one Guard from each Bell unit is immediately designated as chest guardian and holds position at the stockpile rather than pursuing the threat
+- Engages hostile mobs in melee, prioritizing threats closest to the stockpile chests first, then threats closest to non-combat villagers
 - After combat, returns to patrol; Cleric paths to the Guard to heal
 
 **Subrole:** Escort duty
@@ -340,9 +341,14 @@ Mason quarrying subrole ───────► deposits stone surplus ──�
 
 DEFENSE CHAIN
 Cartographer flags threats ────────────────────────────── Guard extends patrol to flagged area
+Guard patrols ──► passes stockpile chests on every loop ── Iron Golem stationed at storehouse
 Guard detects threat ──► THREAT_ALERT ──────────────────► all non-combat villagers SHELTER
+                                                         ► one Guard per Bell holds at stockpile
+                                                         ► Iron Golem engages threats near chests
 Guard engages mob ──► fight resolves ───────────────────► Cleric heals Guard
 Weaponsmith / Armorer / Fletcher restock Guard ─────────► Guard ready for next fight
+Librarian checks prosperity + iron supply ──────────────► Armorer builds Iron Golem (36 ingots)
+Iron Golem dies ───────────────────────────────────────► IronGolemSystem vacates slot ──► Librarian commissions replacement
 Cartographer marks area cleared ───────────────────────► Toolsmith / Mason resume work in area
 
 ESCORT CHAIN
@@ -404,13 +410,29 @@ Every villager has a health value that can be reduced by combat, environment, an
 - The Cleric heals the player on proximity using the same supply pool — if the village is struggling the Cleric may have nothing left for the player
 
 ### 4. Village Inventory (Shared Economy)
-- A shared chest network or data structure attached to the village
-- Coordinated by the Librarian — tracks supply levels, flags shortages, and drives NeedQueue requests
-- All villagers deposit and withdraw based on role and need
-- Tracks supply levels — low supply triggers job requests via the NeedQueue
-- Player can deposit directly to boost village stock
-- Merchant pulls from this inventory to determine what is available for sale
-- Cleric pulls healing supplies from this inventory
+The stockpile is a network of physical chests placed in the world inside the village storehouse area. This is not a virtual data structure — villagers physically walk to a chest, open it, and deposit or withdraw items.
+
+**Physical chest network:**
+- `StockpileChestTracker` maintains a list of `BlockPos` for every registered stockpile chest in the village
+- At village registration, the storehouse location is chosen near the village center and initial chests are placed by the mod or detected from existing vanilla village structures
+- As the village prospers, Mason can extend the storehouse — additional chests are registered with `StockpileChestTracker` and immediately become part of the network
+- `VillageStockpile` reads and writes to the actual chest `TileEntity` at each registered position; it iterates the list and aggregates item counts across all chests when the Librarian queries supply levels
+- Villagers use a `PATH_TO_STOCKPILE` behavior to walk to the nearest registered chest before depositing or withdrawing — they do not teleport items in
+- The player can deposit into any registered stockpile chest directly — the mod detects the interaction and credits the village prosperity score
+
+**Supply monitoring:**
+- The Librarian scans all registered chest contents on a periodic tick to detect shortages
+- Low supply triggers NeedQueue posts via `LibrarianCoordinator` exactly as before — the chest network is the source of truth, not a separate counter
+- Merchant pulls from this network to determine what is currently for sale — if a chest has no iron, iron is not available
+
+**Abstract simulation:**
+- When chunks are unloaded, `VillageStockpile` snapshots chest contents into a lightweight item-count map stored on `SmartVillage`
+- The abstract batch update applies production and consumption to this snapshot
+- On reconciliation, the snapshot is written back to the physical chests when chunks reload
+
+**Defense:**
+- The stockpile chest cluster is a high-value target — Guards include it on every patrol loop (see Guard role)
+- Iron golems are stationed permanently at the storehouse (see Core System 15)
 
 ### 5. NeedQueue (Communication System)
 The backbone of the mod. A server-side queue scoped to each village.
@@ -425,13 +447,15 @@ The backbone of the mod. A server-side queue scoped to each village.
 - Keep this system decoupled — economy, defense, and expansion route through the NeedQueue, not through direct calls to each other
 
 ### 6. Defense System
-- Guards run continuous perimeter patrol routes around the village boundary
+- Guards run continuous perimeter patrol routes around the village boundary; stockpile chest cluster is a mandatory waypoint on every loop
 - On threat detection, Guard broadcasts a `THREAT_ALERT` to the village
 - Non-combat villagers enter a `SHELTER` goal state and pathfind to the nearest building
+- During `THREAT_ALERT`, one Guard per Bell unit is designated chest guardian — holds position at the stockpile and does not pursue threats
 - Cleric moves to assist injured Guards after a fight
 - Alert clears after a cooldown with no threats detected
 - Village memory logs where threats originated — Toolsmith and Mason avoid flagged areas until Guards clear them
 - Guards also respond to `NEED_ESCORT` from Toolsmith or Mason heading out to gather materials
+- Iron golems defend the stockpile area alongside Guards (see Core System 15)
 
 ### 7. Village Expansion
 - Mason villagers check a build queue coordinated by the Librarian
@@ -500,6 +524,34 @@ Villages run in one of two modes depending on player proximity. This keeps the v
 
 This approach allows multiple villages to exist and simulate simultaneously without stacking hundreds of MB of loaded chunks per village.
 
+### 15. Iron Golem Defense System
+Villages commission iron golems as permanent stockpile guardians. These are not naturally spawning vanilla golems — they are intentionally built by the village when the conditions are met.
+
+**Commissioning:**
+- The Librarian triggers golem creation when two conditions are met simultaneously: village prosperity score exceeds a threshold (configurable, default ~250) AND the stockpile contains at least 36 iron ingots (equivalent to 4 iron blocks)
+- The Armorer "builds" the golem by consuming the 36 ingots from the stockpile and calling `IronGolemSystem.spawnGolem()` — this spawns a vanilla `IronGolem` entity at the storehouse
+- The spawned golem's UUID is recorded in `SmartVillage.golems` so the village knows it owns this golem
+- A village can support at most one iron golem per Bell (same scaling as Guards) — Librarian will not commission more than this cap
+
+**Behavior:**
+- Village-owned golems are permanently stationed at the stockpile chest cluster; they do not wander the village like vanilla golems
+- During peaceful periods, golems idle at the storehouse entrance as a visible deterrent
+- On `THREAT_ALERT`, golems activate — they pursue and engage any hostile mob in the village, prioritizing threats nearest the stockpile; they do not leave the village boundary
+- After threat is resolved, golems return to their station at the storehouse
+- Golems do not interact with the NeedQueue and are not villagers — they are village-owned entities managed by `IronGolemSystem`
+
+**Replacement:**
+- When a village-owned golem dies, `IronGolemSystem` detects the death (entity remove event), removes the UUID from `SmartVillage.golems`, and marks the slot as vacant
+- The Librarian checks the vacant slot on its next monitoring tick — if prosperity and iron supply conditions are met again, it commissions a replacement via the Armorer
+- There is a cooldown of at least one in-game day before a replacement can be commissioned to prevent immediate respawning during an active raid
+
+**Abstract simulation:**
+- Golem health is tracked in `SmartVillage` as a simple integer
+- Abstract batch updates apply threat-based damage to the golem; if health reaches zero the golem death is recorded and the slot is vacated
+- On reconciliation, if the golem died during abstract simulation it is not spawned; the Librarian will commission a replacement through normal conditions
+
+---
+
 ### 14. Inter-Village Trade (stretch goal)
 - When a village has surplus goods and the Cartographer has mapped a nearby village, the Librarian flags a trade run
 - Merchant posts `NEED_ESCORT` → Guard accompanies them to the destination village and back
@@ -524,18 +576,19 @@ The village must earn everything else. New professions only appear once prosperi
 Build in this order to avoid dependency issues:
 
 1. Register Guard and Merchant as custom professions — all other roles use vanilla professions with overridden behavior
-2. Shared village inventory system + Librarian as coordinator
+2. Physical chest stockpile network (StockpileChestTracker + VillageStockpile reads/writes real chests) + Librarian as coordinator
 3. Hunger system — every villager needs this before anything else runs
 4. Health system — damage, starvation passive damage, death and role replacement
 5. NeedQueue communication system — most important logic, build this carefully
-6. Guard patrol + threat alert + civilian shelter behavior
+6. Guard patrol + chest-cluster waypoints + threat alert + chest guardian assignment + civilian shelter behavior
 7. Day/night cycle enforcement
 8. Cleric healing (villagers + player) tied to supply levels
-9. Toolsmith mining subrole + Weaponsmith/Armorer crafting chain: Toolsmith deposits ore → Weaponsmith/Armorer process → Guard equips
-10. Mason building subrole + Cartographer planning: Cartographer maps sites → Mason builds
-11. Prosperity score + population growth gating
-12. Personality traits + inter-villager reputation + village memory
-13. Inter-village trade caravans (stretch goal)
+9. Iron golem defense system — Librarian commissions via Armorer when prosperity + iron thresholds met; golem stationed at storehouse; replacement logic on death
+10. Toolsmith mining subrole + Weaponsmith/Armorer crafting chain: Toolsmith deposits ore → Weaponsmith/Armorer process → Guard equips
+11. Mason building subrole + Cartographer planning: Cartographer maps sites → Mason builds (storehouse expansion included)
+12. Prosperity score + population growth gating
+13. Personality traits + inter-villager reputation + village memory
+14. Inter-village trade caravans (stretch goal)
 
 ---
 
@@ -557,7 +610,11 @@ Build in this order to avoid dependency issues:
 - The Librarian coordinates the village — manages the NeedQueue log, tracks supply levels, drives build queue population; treat them as the administrative brain of the village
 - The village should function and evolve whether or not the player is present
 - Villages run in two modes: full simulation (chunks loaded, player within ~128 blocks) and abstract simulation (chunks unloaded, state tracked as data with batch updates). Never force-load village chunks permanently — this would stack hundreds of MB of RAM per village
-- Abstract simulation must track at minimum: per-villager hunger and health, shared inventory contents, NeedQueue state, build queue progress, and any villager deaths — enough to reconcile correctly when full simulation resumes
+- Abstract simulation must track at minimum: per-villager hunger and health, shared inventory contents (chest snapshot), NeedQueue state, build queue progress, villager deaths, and golem health — enough to reconcile correctly when full simulation resumes
+- The stockpile is physical chests in the world, not a virtual data structure — `VillageStockpile` reads actual `ChestBlockEntity` tile entities at the positions tracked by `StockpileChestTracker`; villagers must physically path to a chest to deposit or withdraw
+- Iron golems are village-commissioned entities, not naturally spawning ones — do not rely on vanilla golem spawning mechanics. Spawn them via `IronGolemSystem.spawnGolem()` and track their UUID in `SmartVillage`
+- Guards always include the stockpile chest cluster as a patrol waypoint — never generate a patrol route that skips the storehouse; the chest area is the highest-value target in the village
+- During `THREAT_ALERT`, one Guard per Bell is designated chest guardian — this assignment must be tracked explicitly so the remaining Guards can engage the threat while the guardian holds position
 
 ---
 
@@ -572,7 +629,8 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/village/SimulationMode.java` | Enum for full vs. abstract village simulation modes based on player proximity |
 | `src/main/java/com/smartvillager/village/MerchantColor.java` | Maps villager biome types to merchant robe color palettes with random selection per village |
 | `src/main/java/com/smartvillager/village/VillageRegistry.java` | Persisted SavedData registry mapping villages by UUID and Bell anchor position |
-| `src/main/java/com/smartvillager/village/VillageStockpile.java` | Shared village inventory for depositing and withdrawing items tracked by ItemStack counts |
+| `src/main/java/com/smartvillager/village/VillageStockpile.java` | Reads and writes to physical chest TileEntities at registered positions; aggregates item counts across the full chest network; snapshots to/from abstract sim |
+| `src/main/java/com/smartvillager/village/StockpileChestTracker.java` | Tracks the list of BlockPos for all registered stockpile chests; handles chest registration on village init and storehouse expansion by Mason |
 | `src/main/java/com/smartvillager/village/LibrarianCoordinator.java` | Scans village stockpile against thresholds to detect and flag shortages for NeedQueue posting |
 | `src/main/java/com/smartvillager/village/VillagerInteractionHandler.java` | Blocks vanilla villager trading entirely to route interactions through mod systems |
 | `src/main/java/com/smartvillager/village/SmartVillage.java` | Stores all persistent village data including roster, stockpile, threat state, and abstract health tracking |
@@ -591,8 +649,9 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/needqueue/NeedQueue.java` | System-level stateless logic syncing LibrarianCoordinator shortages to queue posts and expiring stale requests |
 | `src/main/java/com/smartvillager/mixin/MixinVillager.java` | Mixin hook injecting profession-specific behavior into Villager.refreshBrain() call chain |
 | `src/main/java/com/smartvillager/command/DebugCommands.java` | Debug commands for listing nearby villagers, viewing/adding stockpile items, and broadcasting villager thoughts |
-| `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, and civilian shelter orders during threat alerts |
-| `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates circular waypoint patrols around the Bell anchor for Guards during peaceful periods |
+| `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, chest-guardian assignment during THREAT_ALERT, and civilian shelter orders |
+| `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates patrol waypoints around the Bell anchor including mandatory stockpile chest cluster stop for Guards |
+| `src/main/java/com/smartvillager/defense/IronGolemSystem.java` | Commissions, spawns, and stations village-owned iron golems at the storehouse; tracks golem UUIDs on SmartVillage; handles death detection and replacement cooldown |
 | `src/main/java/com/smartvillager/daynight/DayNightCycle.java` | Utility for night detection and guard night-rotation logic; gates resource gathering to daytime only |
 | `src/main/java/com/smartvillager/cleric/ClericHealingSystem.java` | Drives Cleric healing of injured villagers and players, potion brewing subrole, and abstract-sim healing from stockpile supply |
 
@@ -608,6 +667,8 @@ Where to register or store new things:
 - **New attachment** — declare in `ModAttachments` and register on `ATTACHMENT_TYPES`; access via `entity.getData(ModAttachments.YOUR_ATTACHMENT)`
 - **New game event handler** — add a `@SubscribeEvent` method to an `@EventBusSubscriber` class; wire mod-bus events in `SmartVillager` constructor
 - **New per-villager data** — store as an attachment in `ModAttachments`; for village-scoped data, store on `SmartVillage` and serialize through `SmartVillage.CODEC`
+- **New stockpile chest** — register via `StockpileChestTracker.register(villageId, blockPos)`; the tracker persists positions through `SmartVillage.CODEC`; never write to or read from a chest that isn't in the tracker
+- **New village-owned entity** — add its UUID list to `SmartVillage`; listen for entity remove events to detect death; never use vanilla natural-spawn mechanics for intentional village entities
 
 ---
 
