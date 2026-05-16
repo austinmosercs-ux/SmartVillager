@@ -16,7 +16,7 @@ Nothing in Phase 2 or later runs correctly until all of these are stable.
 | 3 | `feature/village-stockpile` | Physical chest network in the world (StockpileChestTracker tracks BlockPos list; VillageStockpile reads/writes actual ChestBlockEntity tile entities); villagers physically path to a chest to deposit or withdraw; Librarian scans chest contents to flag shortages; abstract sim snapshots chest contents to SmartVillage when chunks unload | In Progress |
 | 4 | `feature/villager-backpack` | Per-villager inventory with 15 slots + 4 armor slots — holds food, tools, carried items, and equipped gear | In Review |
 | 5 | `feature/hunger-system` | Hunger value per villager; depletion rate varies by role (Guard and active gatherers burn faster); eat behavior routing to shared food supply | Done |
-| 6 | `feature/health-system` | Combat, environmental, and starvation damage; permanent death and role replacement; SEEK_HEALING behavior | |
+| 6 | `feature/health-system` | Combat, environmental, and starvation damage; permanent death and role replacement; SEEK_HEALING behavior | Done |
 | 7 | `feature/need-queue` | Core village communication — NeedRequest structure (type, urgency, reward, poster); queue scoped per village; idle-state polling; request acceptance and completion | Done |
 
 ---
@@ -27,7 +27,7 @@ Build these once the foundation is solid. Branches 11–14 can be developed in p
 | # | Branch | What it covers | Status |
 |---|---|---|---|
 | 8 | `feature/guard-defense` | Guard perimeter patrol routes with mandatory stockpile chest cluster waypoint; threat detection; THREAT_ALERT broadcast; one Guard per Bell designated as chest guardian during alert (holds position at storehouse); non-combat villagers enter SHELTER state; Cleric notified after fight | Done |
-| 8b | `feature/iron-golem-defense` | Village-commissioned iron golems stationed at stockpile storehouse; Librarian triggers Armorer to build golem when prosperity threshold + 36 iron ingots in stock; golem cap = 1 per Bell; golem UUID tracked on SmartVillage; death detection via entity remove event; replacement cooldown of one in-game day; abstract sim tracks golem health and applies threat damage | |
+| 8b | `feature/iron-golem-defense` | Village-commissioned iron golems stationed at stockpile storehouse; Librarian triggers Armorer to build golem when prosperity threshold + 36 iron ingots in stock; golem cap = 1 per Bell; golem UUID tracked on SmartVillage; death detection via entity remove event; replacement cooldown of one in-game day; abstract sim tracks golem health and applies threat damage | In Review |
 | 9 | `feature/day-night-cycle` | Sleep enforcement for all non-Guard villagers; Guard night rotation; no resource gathering runs allowed after dark | In Progress |
 | 10 | `feature/cleric-healing` | Villager healing triggered by health threshold or NEED_HEALING request; potion brewing subrole; player proximity healing from same supply pool | |
 | 11 | `feature/food-chain` | Farmer (crops primary + wood subrole), Fisherman (fish primary + sand/clay/flint subrole), Shepherd (animal tending primary + byproduct supply subrole), Butcher (meat processing primary + husbandry subrole), Leatherworker (leather goods primary + flex subrole) — all deposit to shared inventory | |

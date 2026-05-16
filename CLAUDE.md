@@ -689,7 +689,7 @@ Where to register or store new things:
 | Minecraft version | 26.1.2 |
 | NeoForge version | 26.1.2.44-beta |
 
-**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle
+**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle, cleric healing, iron golem defense
 
 **Branch pattern:** `feature/description` and `bugfix/description`
 

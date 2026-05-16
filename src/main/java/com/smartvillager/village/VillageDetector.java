@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
 import com.smartvillager.cleric.ClericHealingSystem;
 import com.smartvillager.defense.GuardDefenseSystem;
+import com.smartvillager.defense.IronGolemSystem;
 import com.smartvillager.defense.PatrolSystem;
 import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
@@ -217,9 +218,11 @@ public final class VillageDetector {
             ClericHealingSystem.tick(level, village, level.getGameTime());
             GuardDefenseSystem.tick(level, village, level.getGameTime());
             PatrolSystem.tick(level, village, level.getGameTime());
+            IronGolemSystem.tick(level, village, level.getGameTime());
             if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
                 LibrarianCoordinator.tick(village);
                 NeedQueue.tick(village, level.getGameTime());
+                village.addProsperity(1);
             }
         }
     }
@@ -242,6 +245,8 @@ public final class VillageDetector {
         LibrarianCoordinator.abstractTick(village);
         NeedQueue.abstractTick(village, currentTick);
         GuardDefenseSystem.abstractTick(village);
+        IronGolemSystem.abstractTick(village);
+        village.addProsperity(5);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);
         ClericHealingSystem.abstractTick(village);

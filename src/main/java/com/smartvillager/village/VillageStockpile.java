@@ -173,10 +173,9 @@ public final class VillageStockpile {
     private void depositToChests(Identifier itemId, int count) {
         int remaining = count;
         for (BlockPos pos : tracker.positions()) {
-            ChestBlockEntity chest = getChest(pos);
-            if (chest == null) continue;
-            remaining -= insertIntoChest(chest, itemId, remaining);
             if (remaining <= 0) break;
+            ChestBlockEntity chest = getChest(pos);
+            if (chest != null) remaining -= insertIntoChest(chest, itemId, remaining);
         }
         // Overflow that didn't fit in any chest falls back to the snapshot map.
         if (remaining > 0) {
@@ -187,10 +186,9 @@ public final class VillageStockpile {
     private int withdrawFromChests(Identifier itemId, int count) {
         int remaining = count;
         for (BlockPos pos : tracker.positions()) {
-            ChestBlockEntity chest = getChest(pos);
-            if (chest == null) continue;
-            remaining -= removeFromChest(chest, itemId, remaining);
             if (remaining <= 0) break;
+            ChestBlockEntity chest = getChest(pos);
+            if (chest != null) remaining -= removeFromChest(chest, itemId, remaining);
         }
         return count - remaining;
     }
@@ -342,8 +340,8 @@ public final class VillageStockpile {
         for (int slot = 0; slot < chest.getContainerSize(); slot++) {
             ItemStack stack = chest.getItem(slot);
             if (stack.isEmpty()) continue;
-            Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-            if (id != null) map.merge(id, stack.getCount(), Integer::sum);
+            // Any item from a non-empty stack is registered; getKey() is non-null here.
+            map.merge(BuiltInRegistries.ITEM.getKey(stack.getItem()), stack.getCount(), Integer::sum);
         }
     }
 
@@ -356,9 +354,7 @@ public final class VillageStockpile {
     }
 
     private static Item resolveItem(Identifier itemId) {
-        return BuiltInRegistries.ITEM.getOptional(itemId)
-            .map(net.minecraft.core.Holder::value)
-            .orElse(Items.AIR);
+        return BuiltInRegistries.ITEM.getOptional(itemId).orElse(Items.AIR);
     }
 
     private static boolean matchesId(ItemStack stack, Identifier itemId) {

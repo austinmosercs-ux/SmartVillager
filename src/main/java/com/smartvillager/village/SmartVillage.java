@@ -13,8 +13,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.DyeColor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -77,7 +79,20 @@ public final class SmartVillage {
         StockpileChestTracker.CODEC
             .optionalFieldOf("chest_tracker")
             .xmap(opt -> opt.orElseGet(StockpileChestTracker::new), Optional::of)
-            .forGetter(SmartVillage::getChestTracker)
+            .forGetter(SmartVillage::getChestTracker),
+        UUIDUtil.STRING_CODEC.listOf()
+            .optionalFieldOf("golems")
+            .<Set<UUID>>xmap(opt -> new HashSet<>(opt.orElseGet(ArrayList::new)),
+                             set -> Optional.of(new ArrayList<>(set)))
+            .forGetter(SmartVillage::getGolems),
+        Codec.LONG
+            .optionalFieldOf("golem_replacement_cooldown_tick")
+            .xmap(opt -> opt.orElse(0L), Optional::of)
+            .forGetter(SmartVillage::getGolemReplacementCooldownTick),
+        Codec.INT
+            .optionalFieldOf("prosperity_score")
+            .xmap(opt -> opt.orElse(0), Optional::of)
+            .forGetter(SmartVillage::getProsperityScore)
     ).apply(i, SmartVillage::new));
 
     private final UUID id;
@@ -89,12 +104,23 @@ public final class SmartVillage {
     private final VillageStockpile stockpile;
     private final VillageNeedQueue needQueue;
     private final StockpileChestTracker chestTracker;
+    // Persisted: UUIDs of village-owned iron golems currently alive in the world.
+    private final Set<UUID> golems;
+    // Persisted: earliest game tick at which a replacement golem may be commissioned
+    // after a golem slot was vacated. Zero means no cooldown is active.
+    private long golemReplacementCooldownTick;
+    // Persisted: cumulative prosperity score; drives golem commissioning and future unlocks.
+    private int prosperityScore;
+
     private SimulationMode mode = SimulationMode.ABSTRACT;
     private Set<Identifier> shortages = Collections.emptySet();
     // Runtime-only: per-villager notional HP used during abstract simulation.
     // Not persisted — villagers start at full health after a server restart.
     // Serialization will be added alongside attachment persistence in a later branch.
     private final Map<UUID, Float> abstractHealth = new HashMap<>();
+    // Runtime-only: notional HP per golem UUID during abstract simulation.
+    // Default is GOLEM_MAX_HEALTH (100) so golems load at full health after a restart.
+    private final Map<UUID, Integer> abstractGolemHealth = new HashMap<>();
 
     // Runtime-only threat alert state. Not persisted — resets on server restart.
     // Full sim sets and clears this; abstract sim preserves the last known state.
@@ -103,12 +129,14 @@ public final class SmartVillage {
     private long threatAlertStartTick = 0L;
 
     private static final float DEFAULT_ABSTRACT_HEALTH = 20.0f; // matches VillagerHealth.MAX
+    private static final int DEFAULT_ABSTRACT_GOLEM_HEALTH = 100; // matches IronGolemSystem.GOLEM_MAX_HEALTH
 
     @SuppressWarnings("java:S107") // all parameters are codec-driven fields; no meaningful grouping exists
     public SmartVillage(UUID id, BlockPos anchor, ResourceKey<VillagerType> villagerTypeKey,
                         DyeColor merchantColor, Map<UUID, Identifier> roster,
                         long lastAbstractUpdate, VillageStockpile stockpile,
-                        VillageNeedQueue needQueue, StockpileChestTracker chestTracker) {
+                        VillageNeedQueue needQueue, StockpileChestTracker chestTracker,
+                        Set<UUID> golems, long golemReplacementCooldownTick, int prosperityScore) {
         this.id = id;
         this.anchor = anchor;
         this.villagerTypeKey = villagerTypeKey;
@@ -118,6 +146,9 @@ public final class SmartVillage {
         this.stockpile = stockpile;
         this.needQueue = needQueue;
         this.chestTracker = chestTracker;
+        this.golems = new HashSet<>(golems);
+        this.golemReplacementCooldownTick = golemReplacementCooldownTick;
+        this.prosperityScore = prosperityScore;
     }
 
     public static SmartVillage create(BlockPos anchor, ResourceKey<VillagerType> typeKey,
@@ -131,7 +162,10 @@ public final class SmartVillage {
             gameTime,
             new VillageStockpile(),
             new VillageNeedQueue(),
-            new StockpileChestTracker()
+            new StockpileChestTracker(),
+            new HashSet<>(),
+            0L,
+            0
         );
     }
 
@@ -233,6 +267,52 @@ public final class SmartVillage {
 
     public void clearThreatAlert() {
         threatAlertActive = false;
+    }
+
+    // --- golem management ---
+
+    /** Returns the set of village-owned golem UUIDs currently alive in the world. */
+    public Set<UUID> getGolems() { return Collections.unmodifiableSet(golems); }
+
+    public void addGolem(UUID golemUUID) {
+        golems.add(golemUUID);
+        abstractGolemHealth.put(golemUUID, DEFAULT_ABSTRACT_GOLEM_HEALTH);
+    }
+
+    /**
+     * Removes a golem UUID from the tracked set and starts the replacement cooldown.
+     *
+     * @param golemUUID  the dead golem's UUID
+     * @param currentTick the game tick at the time of death
+     */
+    public void removeGolem(UUID golemUUID, long currentTick) {
+        golems.remove(golemUUID);
+        abstractGolemHealth.remove(golemUUID);
+        // Block replacement for one in-game day after death.
+        golemReplacementCooldownTick = currentTick + 24000L;
+    }
+
+    /** Maximum village-owned golems: one per Bell. Currently always 1 (single-Bell villages). */
+    public static final int GOLEM_CAP = 1;
+
+    public long getGolemReplacementCooldownTick() { return golemReplacementCooldownTick; }
+
+    // --- abstract golem health ---
+
+    public int getAbstractGolemHealth(UUID golemUUID) {
+        return abstractGolemHealth.getOrDefault(golemUUID, DEFAULT_ABSTRACT_GOLEM_HEALTH);
+    }
+
+    public void setAbstractGolemHealth(UUID golemUUID, int hp) {
+        abstractGolemHealth.put(golemUUID, hp);
+    }
+
+    // --- prosperity ---
+
+    public int getProsperityScore() { return prosperityScore; }
+
+    public void addProsperity(int amount) {
+        prosperityScore += amount;
     }
 
     // --- getters ---
