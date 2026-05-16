@@ -1,0 +1,46 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "gold":     "minecraft:block/gold_block",
+    "surface":  "minecraft:block/dark_oak_planks",
+    "particle": "minecraft:block/gold_block"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to":   [16, 2, 16],
+      "faces": {
+        "down":  { "uv": [0, 0, 16, 16], "texture": "#gold" },
+        "up":    { "uv": [0, 0, 16, 16], "texture": "#gold" },
+        "north": { "uv": [0, 14, 16, 16], "texture": "#gold" },
+        "south": { "uv": [0, 14, 16, 16], "texture": "#gold" },
+        "west":  { "uv": [0, 14, 16, 16], "texture": "#gold" },
+        "east":  { "uv": [0, 14, 16, 16], "texture": "#gold" }
+      }
+    },
+    {
+      "from": [6, 2, 6],
+      "to":   [10, 12, 10],
+      "faces": {
+        "down":  { "uv": [6, 6, 10, 10], "texture": "#gold" },
+        "up":    { "uv": [6, 6, 10, 10], "texture": "#gold" },
+        "north": { "uv": [0, 6, 4, 16],  "texture": "#gold" },
+        "south": { "uv": [0, 6, 4, 16],  "texture": "#gold" },
+        "west":  { "uv": [0, 6, 4, 16],  "texture": "#gold" },
+        "east":  { "uv": [0, 6, 4, 16],  "texture": "#gold" }
+      }
+    },
+    {
+      "from": [1, 12, 1],
+      "to":   [15, 15, 15],
+      "faces": {
+        "down":  { "uv": [1, 1, 15, 15],  "texture": "#gold" },
+        "up":    { "uv": [1, 1, 15, 15],  "texture": "#surface" },
+        "north": { "uv": [1, 13, 15, 16], "texture": "#gold" },
+        "south": { "uv": [1, 13, 15, 16], "texture": "#gold" },
+        "west":  { "uv": [1, 13, 15, 16], "texture": "#gold" },
+        "east":  { "uv": [1, 13, 15, 16], "texture": "#gold" }
+      }
+    }
+  ]
+}
