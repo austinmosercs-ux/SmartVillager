@@ -596,6 +596,46 @@ Build in this order to avoid dependency issues:
 
 ---
 
+## Patterns
+
+Where to register or store new things:
+
+- **New profession behavior** — register a handler in `ProfessionBehaviorRegistry` via `ProfessionBehaviorRegistry.register(professionKey, handler)` during `FMLCommonSetupEvent`
+- **New profession** — declare in `ModProfessions` and register its POI association; add to `VillageDetector.chooseProfession()` if it should be auto-assigned at birth
+- **New need type** — add a constant to `NeedTypes`; post via `NeedQueue.postRequest()` and check via `VillageNeedQueue.hasOpenRequest()`
+- **New attachment** — declare in `ModAttachments` and register on `ATTACHMENT_TYPES`; access via `entity.getData(ModAttachments.YOUR_ATTACHMENT)`
+- **New game event handler** — add a `@SubscribeEvent` method to an `@EventBusSubscriber` class; wire mod-bus events in `SmartVillager` constructor
+- **New per-villager data** — store as an attachment in `ModAttachments`; for village-scoped data, store on `SmartVillage` and serialize through `SmartVillage.CODEC`
+
+---
+
+## Rules
+
+- **Check Key Files first** — before exploring the codebase for an unknown file or class, scan the Key Files table above; the responsible file is almost always listed there
+- **Use existing registries** — never bypass `ModProfessions`, `ModAttachments`, `ProfessionBehaviorRegistry`, or `VillageRegistry`; always extend them instead of creating parallel structures
+- **Finish the task first** — complete the requested change before suggesting refactors, improvements, or follow-up work
+- **Update Key Files before finishing** — every new Java file must have a row added to the Key Files table in the same task that created it
+
+---
+
+## Current State
+
+| Property | Value |
+|---|---|
+| Mod version | 0.2.4 |
+| Minecraft version | 26.1.2 |
+| NeoForge version | 26.1.2.44-beta |
+
+**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle
+
+**Branch pattern:** `feature/description` and `bugfix/description`
+
+**Integration branch:** `dev` (not `main`) — all feature branches merge to `dev` first
+
+**Commit format:** `feat:` or `fix:` prefix required
+
+---
+
 ## Maintenance Rules
 
 - Whenever a new Java file is created, add a row to the Key Files table above with its path and a one-line description of its responsibility before finishing the task.
