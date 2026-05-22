@@ -648,7 +648,15 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/needqueue/VillageNeedQueue.java` | Per-village queue with open and in-progress request lists, supporting posting/acceptance/completion/expiry |
 | `src/main/java/com/smartvillager/needqueue/NeedQueue.java` | System-level stateless logic syncing LibrarianCoordinator shortages to queue posts and expiring stale requests |
 | `src/main/java/com/smartvillager/mixin/MixinVillager.java` | Mixin hook injecting profession-specific behavior into Villager.refreshBrain() call chain |
-| `src/main/java/com/smartvillager/command/DebugCommands.java` | Debug commands for listing nearby villagers, viewing/adding stockpile items, and broadcasting villager thoughts |
+| `src/main/java/com/smartvillager/command/DebugCommands.java` | Thin `/sv` command orchestrator — builds the Brigadier tree by calling each submodule's `register()` and registering it; no command logic lives here |
+| `src/main/java/com/smartvillager/command/DebugHelper.java` | Shared constants (`NO_VILLAGE_MSG`, `FMT_HP`, `CMD_CLEAR`, etc.) and utilities (`findNearestVillage`, `parseItemId`) used by all `/sv` command classes |
+| `src/main/java/com/smartvillager/command/VillagerDebugCommands.java` | `/sv debug` thought broadcast (toggle + tick event), `/sv nearby`, `/sv villager heal\|feed` |
+| `src/main/java/com/smartvillager/command/VillageInfoCommands.java` | `/sv status` (full village overview) and `/sv roster` (roster with live/abstract HP and hunger) |
+| `src/main/java/com/smartvillager/command/StockpileCommands.java` | `/sv stockpile` list/add/set/clear — reads and mutates the village stockpile for testing |
+| `src/main/java/com/smartvillager/command/NeedQueueCommands.java` | `/sv queue` list/clear — inspects and resets the VillageNeedQueue |
+| `src/main/java/com/smartvillager/command/DefenseCommands.java` | `/sv threat` trigger/clear and `/sv golem` list/spawn — manual defense state control |
+| `src/main/java/com/smartvillager/command/EconomyCommands.java` | `/sv prosperity` add/set and `/sv build` list/clear — prosperity score and build queue control |
+| `DEV_COMMANDS.md` | Player-facing reference for all `/sv` in-game test commands with syntax, descriptions, and common testing workflows |
 | `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, chest-guardian assignment during THREAT_ALERT, and civilian shelter orders |
 | `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates patrol waypoints around the Bell anchor including mandatory stockpile chest cluster stop for Guards |
 | `src/main/java/com/smartvillager/defense/IronGolemSystem.java` | Commissions, spawns, and stations village-owned iron golems at the storehouse; tracks golem UUIDs on SmartVillage; handles death detection and replacement cooldown |
@@ -690,6 +698,7 @@ Where to register or store new things:
 - **Use existing registries** — never bypass `ModProfessions`, `ModAttachments`, `ProfessionBehaviorRegistry`, or `VillageRegistry`; always extend them instead of creating parallel structures
 - **Finish the task first** — complete the requested change before suggesting refactors, improvements, or follow-up work
 - **Update Key Files before finishing** — every new Java file must have a row added to the Key Files table in the same task that created it
+- **Update DEV_COMMANDS.md for every new `/sv` command** — whenever a command is added to or removed from `DebugCommands.java`, update `DEV_COMMANDS.md` in the same task: add a new entry under the correct section with the exact syntax, a one-line description, and any relevant testing notes; also add it to the Common Testing Workflows section if it enables a meaningful test scenario
 
 ---
 
