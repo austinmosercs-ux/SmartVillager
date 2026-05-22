@@ -1,76 +1,24 @@
 # Villager Society Mod – Project Context
 
 ## What this mod does
-This mod overhauls Minecraft villagers to function as a real society. Villagers have jobs with actual purpose, communicate with each other to solve problems, trade among themselves, defend their village, and expand it over time. The goal is emergent behavior — a village that feels alive and self-sustaining.
+This mod overhauls Minecraft villagers to function as a real society. Villagers choose their own professions, earn everything through real in-game actions, communicate with each other to solve problems, trade among themselves and with the player, defend their village, and expand it over time. The goal is emergent behavior — a village that feels alive and self-sustaining.
 
-Vanilla villager trading with the player is completely removed. Villagers run their own internal economy. The player is an outsider who can observe, assist, donate, and interact — but the village operates with or without them.
+Villagers operate their own internal economy using emeralds as currency. The player is an outsider who can observe, assist, donate, and trade — but the village operates with or without them.
 
 ---
 
 ## Villager Classes
 
 ### Design philosophy
-Almost all roles use existing vanilla professions with new behaviors. No new professions are created except **Guard** (combat, no vanilla equivalent) and **Merchant** (player trade interface). Every vanilla villager keeps their workblock as a job site anchor — the block tells them where to go during work hours, but profession is assigned at birth based on village need, not by claiming a block.
+All roles use existing vanilla professions with new behaviors. No custom professions exist. Every vanilla villager keeps their workblock as a job site anchor — the block tells them where to go during work hours, but profession is assigned at birth based on a weighted need calculation influenced by village gaps and personal personality trait.
 
-Subroles are the second entry in each villager's goal stack. The primary role runs first. The subrole activates when primary work is idle, when a matching NeedQueue request exists, or when the villager's own supply chain is blocked. Every villager's subrole is designed to feed another villager's primary role — collaboration is structural, not optional.
+Subroles are drawn from a shared behavior pool rather than hardcoded per profession. A villager checks the NeedQueue during idle time and picks up any task they are capable of, based on what tools they are carrying and what the village needs. A Toolsmith with an axe in their inventory can chop wood as a subrole. A Weaponsmith who has just finished crafting can patrol as a subrole. Collaboration is emergent, not hardcoded.
 
----
-
-### Custom classes
-
-#### Guard
-**Job site block:** Bell (vanilla) — Guard paths to the bell at the start and end of each shift; the bell is their patrol origin point and the village rally point during THREAT_ALERT. No custom block needed.
-
-**Capacity:** Each Bell supports exactly 3 Guards. Guards claim a Bell as their assigned post at birth — once a Bell is at capacity, no new Guards are assigned to it until a slot opens (Guard dies or a new Bell is built). Multiple Bells in a village each have their own Guard unit. All Guards across all Bells respond to a village-wide THREAT_ALERT regardless of which Bell they are assigned to. Adding Bells is the only way to grow the Guard force — this is managed through the Mason build queue as the village prospers.
-
-**Primary role:** Village defense and combat
-- Runs perimeter patrol routes around the village boundary during the day; patrol waypoints include the stockpile chest cluster as a mandatory stop — Guards physically pass through the storehouse area on every patrol loop
-- One or two Guards rotate on night duty; the night-rotation Guard is stationed at or near the stockpile chests rather than the full perimeter
-- On threat detection, broadcasts `THREAT_ALERT` — non-combat villagers enter `SHELTER` state, Cleric prepares to assist; one Guard from each Bell unit is immediately designated as chest guardian and holds position at the stockpile rather than pursuing the threat
-- Engages hostile mobs in melee, prioritizing threats closest to the stockpile chests first, then threats closest to non-combat villagers
-- After combat, returns to patrol; Cleric paths to the Guard to heal
-
-**Subrole:** Escort duty
-- Monitors NeedQueue for `NEED_ESCORT` requests from Toolsmith, Mason, Fisherman, or Cartographer heading outside safe village boundaries
-- Accompanies the requesting villager, fights any threats on the route, returns to patrol once the escorted villager is back
-- Also escorts Merchant caravans on inter-village trade runs (stretch goal)
-
-**Deposits:** Nothing — Guard is a consumer of equipment
-**Withdraws:** Weapons, armor, and arrows when equipment is damaged or depleted
-**Key collaborators:** Weaponsmith, Armorer, Fletcher (equipment supply), Cartographer (threat data and patrol routes), Cleric (post-combat healing)
+Defense is handled by three vanilla professions working as a team: Weaponsmith (melee/patrol), Fletcher (ranged support), and Armorer (equipment logistics). There is no dedicated Guard profession.
 
 ---
 
-#### Merchant
-**Job site block:** None — Merchant has no assigned job site block. During work hours they wander within the village center and path toward the player when they enter the village. Requires a custom idle behavior to keep them from wandering outside the village boundary.
-
-**Appearance:** Uses the Wandering Trader model as a base. Robe color is determined by the biome the village spawns in — assigned once at village creation and shared by all Merchants from that village. Color is purely cosmetic but acts as a visual identifier of which village a Merchant came from when they travel.
-
-| Biome | Robe colors |
-|---|---|
-| Desert | Cyan, green, or lime |
-| Plains | White or yellow |
-| Savanna | Orange, red, or yellow |
-| Taiga / Snowy Taiga | Blue or purple |
-| Snowy Tundra | Blue, red, or white |
-
-**Primary role:** Player trade interface
-- Monitors village chest supply levels continuously
-- When a player approaches, opens shop UI showing only items currently in stock — no hardcoded trades
-- Prices adjust dynamically: high supply = lower prices, low supply = higher prices
-
-**Subrole:** Village supply monitor
-- During idle time, scans shared inventory for critically low supplies
-- Posts `NEED_RESTOCK: [item]` to NeedQueue when levels fall below thresholds, prompting the responsible producer to act
-- If the village consistently runs out of a particular item, flags it to the Librarian for long-term priority adjustment
-
-**Deposits:** Nothing directly — stock comes from all producers
-**Withdraws:** Items sold to the player; nothing for personal use
-**Key collaborators:** Librarian (supply threshold coordination), all producers (everything the Merchant sells comes from them)
-
----
-
-### Vanilla professions — detailed breakdown
+### Villager Classes — detailed breakdown
 
 #### Food Supply Group
 
@@ -79,8 +27,9 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 - Tills soil, plants seeds, harvests mature crops (wheat, carrots, potatoes, beetroot)
 - Bakes bread when wheat supply allows; deposits all food to shared inventory
 - Maintains farmland — replants after every harvest, expands plots when Mason builds new farmland
+- Must physically break mature crop blocks and till with a hoe — no items granted without real actions
 
-**Subrole:** Gather wood and plant materials
+**Subrole (shared pool):** Gather wood and plant materials
 - When crops are not yet mature and primary work is idle, chops nearby trees for logs and saplings
 - Deposits logs and saplings to shared inventory — Fletcher uses wood for arrows, Mason uses it for early construction
 - Replants saplings after chopping to keep the wood supply sustainable
@@ -93,10 +42,10 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 
 ##### Fisherman
 **Primary role:** Fish for food — supplements village food supply independently of farmland
-- Paths to nearest water source, fishes until inventory is full, returns and deposits to shared inventory
+- Paths to nearest water source, physically uses fishing rod, returns and deposits catch to shared inventory
 - Critical in early village when farmland is limited, or as a food buffer when crops fail
 
-**Subrole:** Gather water-adjacent resources
+**Subrole (shared pool):** Gather water-adjacent resources
 - Collects clay, sand, gravel, and flint while at the water's edge
 - Deposits to shared inventory — Mason uses sand and gravel for building, Fletcher uses flint for arrows
 - Reports water source locations to Cartographer for village mapping
@@ -112,7 +61,7 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 - Collects raw meat from Shepherd's animal pens, cooks it at the smoker, deposits cooked food to shared inventory
 - Monitors food levels — if supply drops critically, posts `NEED_FOOD_BOOST` to NeedQueue, prompting Shepherd to increase culling rate
 
-**Subrole:** Assist Shepherd with animal husbandry
+**Subrole (shared pool):** Assist Shepherd with animal husbandry
 - When meat supply is adequate, helps breed animals and maintain the animal pen
 - Ensures animal population stays healthy and growing so future supply is sustainable
 - If Shepherd is injured or absent, takes over basic animal care
@@ -129,7 +78,7 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 - Shears sheep for wool when fleece is full; culls animals at sustainable intervals for meat supply
 - Deposits wool, raw meat, feathers, and leather to shared inventory
 
-**Subrole:** Supply the production chain with animal byproducts
+**Subrole (shared pool):** Supply the production chain with animal byproducts
 - Maintains chicken population specifically to supply feathers to Fletcher's arrow crafting
 - Collects leather from cows for Leatherworker and Armorer's early armor tier
 - Deposits all byproducts — Butcher, Fletcher, and Leatherworker all depend on this output
@@ -143,16 +92,16 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 ##### Leatherworker
 **Primary role:** Process leather into goods and early armor
 - Draws leather from shared inventory (supplied by Shepherd)
-- Crafts leather armor pieces — provides early protection for Guards before Armorer is producing iron armor
-- Deposits leather goods to shared inventory for Guard use and Merchant sale
+- Crafts leather armor pieces at a crafting table — provides early protection for Weaponsmiths before Armorer is producing iron armor
+- Deposits leather goods to shared inventory
 
-**Subrole:** Flex worker in the animal supply chain
+**Subrole (shared pool):** Flex worker in the animal supply chain
 - When leather supply is adequate and primary work is idle, assists Butcher with smoker operations or Shepherd with pen maintenance
 - Acts as a buffer in the food/animal group when one member is injured or overloaded
 
 **Deposits:** Leather armor pieces, leather goods
 **Withdraws:** Leather from Shepherd via shared inventory
-**Key collaborators:** Shepherd (leather source), Armorer (hands off leather armor to Guard before iron is available), Guard (early armor recipient)
+**Key collaborators:** Shepherd (leather source), Armorer (hands off leather armor to Weaponsmith before iron is available)
 
 ---
 
@@ -162,18 +111,18 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 **Primary role:** Build and expand village structures
 - Checks the build queue (managed by Librarian, planned by Cartographer) for pending construction tasks
 - Fetches required materials from shared inventory; if stock is low, triggers own quarrying subrole first
-- Pathfinds to the build site and places blocks to complete the structure
+- Pathfinds to the build site and physically places blocks to complete the structure
 - State machine: `IDLE → CHECK_QUEUE → FETCH_MATERIALS → PATHFIND_TO_SITE → BUILD → IDLE`
 - Requires tools from Toolsmith — waits or posts `NEED_TOOLS` to NeedQueue if none available
 
-**Subrole:** Quarry stone and raw building materials
+**Subrole (shared pool):** Quarry stone and raw building materials
 - When the build queue is empty or materials are low, switches to quarrying
-- Mines stone, cobblestone, gravel, and sand at designated quarry zones; takes what the current build task requires and deposits all surplus to shared inventory
+- Physically mines stone, cobblestone, gravel, and sand at designated quarry zones; deposits all surplus to shared inventory
 - Posts `NEED_ESCORT` if the quarry area is flagged as dangerous by Cartographer before heading out
 
 **Deposits:** Stone, cobblestone, gravel, surplus building materials
 **Withdraws:** Tools (from Toolsmith), building materials from shared inventory
-**Key collaborators:** Cartographer (build plans and site locations), Toolsmith (tool supply), Guard (escort when quarrying in flagged areas), Librarian (build queue management)
+**Key collaborators:** Cartographer (build plans and site locations), Toolsmith (tool supply), Weaponsmith (escort when quarrying in flagged areas), Librarian (build queue management)
 
 ---
 
@@ -182,72 +131,77 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 - Surveys the village boundary, records all existing structure locations, identifies where new structures are needed
 - Plans new build sites based on population and prosperity (more villagers → more houses; more Toolsmiths → mine entrance; etc.)
 - Shares build site plans with Mason via the Librarian's build queue
-- Maps cave systems and underground ore areas, sharing data with Toolsmith so mining runs are efficient
+- Maps cave systems, underground ore areas, and nearby structure loot locations (dungeons, mineshafts, temples) — shares all data with Toolsmith
 
-**Subrole:** Scout new areas and flag threats
+**Subrole (shared pool):** Scout new areas and flag threats
 - Ventures outside the village boundary to explore terrain (posts `NEED_ESCORT` first if the area is unknown)
-- Marks hostile mob spawn points, cave entrances, and resource-rich zones
-- Feeds threat data to Guards so they can extend patrol routes to cover newly identified danger areas
+- Marks hostile mob spawn points, cave entrances, resource-rich zones, and loot structures
+- Feeds threat data to Weaponsmiths so they can extend patrol routes to cover newly identified danger areas
 - Updates village memory with explored territory, cleared threats, and newly discovered resources
 
-**Deposits:** Data — location records, threat flags, build plans (no physical items)
+**Deposits:** Data — location records, threat flags, build plans, loot structure locations (no physical items)
 **Withdraws:** Paper, maps (tools of the trade)
-**Key collaborators:** Mason (build site plans), Guard (threat map and patrol route data), Toolsmith (cave and ore location data), Librarian (all map data feeds into village memory and build queue)
+**Key collaborators:** Mason (build site plans), Weaponsmith (threat map and patrol route data), Toolsmith (cave and loot location data), Librarian (all map data feeds into village memory and build queue)
 
 ---
 
-#### Defense Supply Group
+#### Defense Group
 
 ##### Weaponsmith
-**Primary role:** Craft weapons for Guards
-- Monitors Guard equipment condition — checks whether Guards have functional swords and axes
-- Draws iron ore and ingots from shared inventory (deposited by Toolsmith's mining subrole); smelts if raw ore is available
-- Crafts swords and axes, deposits to shared inventory for Guard withdrawal or delivers directly
+**Primary role:** Village melee defense and patrol
+- Runs perimeter patrol routes around the village boundary during the day; patrol waypoints include the stockpile chest cluster as a mandatory stop on every loop
+- On threat detection, broadcasts `THREAT_ALERT` — non-combat villagers enter `SHELTER` state, Cleric prepares to assist; one Weaponsmith is designated chest guardian and holds position at the stockpile rather than pursuing the threat
+- Engages hostile mobs in melee, prioritizing threats closest to the stockpile first, then threats closest to non-combat villagers
+- After combat, returns to patrol; Cleric paths to the Weaponsmith to heal
+- Remains active at night on rotation — the only non-Cleric villager with a night work goal; night-rotation Weaponsmith stations at or near the stockpile rather than the full perimeter
+- Responds to `NEED_ESCORT` from Toolsmith, Mason, or Cartographer heading outside safe village boundaries
+
+**Subrole (primary craft):** Craft weapons
+- During idle patrol time or when no threats are active, works the grindstone to craft and repair swords and axes
+- Draws iron ore and ingots from shared inventory; smelts if raw ore is available at a furnace
+- Equips themselves first from what they craft; deposits surplus weapons to shared inventory for other Weaponsmiths
 - Upgrades weapon tier as ore supply grows (stone → iron → diamond)
 
-**Subrole:** Smelt ore surplus into ingots
-- When Guards are fully equipped, smelts raw ore from shared inventory into ingots as a buffer
-- Pre-smelted ingots allow both Weaponsmith and Armorer to respond faster when equipment demand spikes after a fight
-- Coordinates with Armorer to avoid both smelting simultaneously when ore supply is limited
-
 **Deposits:** Swords, axes, smelted ingots (surplus)
-**Withdraws:** Iron ore, coal, ingots from shared inventory
-**Key collaborators:** Toolsmith (ore supply), Armorer (full Guard kit coordination — neither duplicates the other's work), Guard (weapon recipient), Fletcher (coordinates ranged vs melee supply)
+**Withdraws:** Iron ore, coal, ingots from shared inventory; weapons and armor for personal use
+**Key collaborators:** Toolsmith (ore supply), Armorer (full kit coordination), Fletcher (ranged support during fights), Cleric (post-combat healing), Cartographer (threat and patrol route data)
 
 ---
 
 ##### Armorer
-**Primary role:** Craft armor for Guards
-- Monitors Guard armor condition — checks if Guards have complete armor sets
-- Draws ingots from shared inventory (smelted by Weaponsmith or self-smelted); crafts helmet, chestplate, leggings, and boots
-- Deposits armor to shared inventory or delivers directly to Guard
+**Primary role:** Equipment logistics — armor crafting and defender rearming
+- Monitors Weaponsmith and Fletcher equipment condition — checks if defenders have complete armor sets and functional gear
+- Draws ingots from shared inventory; crafts helmet, chestplate, leggings, and boots at a crafting table; delivers directly to defenders
 - Upgrades armor tier progressively — starts with leather (from Leatherworker) then iron, then diamond as prosperity grows
+- Does not engage in direct combat — stays back and manages gear during fights
+- During `THREAT_ALERT`, prepares emergency replacement gear so defenders can rearm immediately after a fight
 
-**Subrole:** Manage Guard equipment upgrades and emergency rearming
-- When Guards are fully armored, smelts ingots as a buffer reserve for rapid rearming after fights when multiple Guards take damage
-- Tracks Guard equipment state — if a Guard dies and their armor is lost, flags it as `URGENT` in the NeedQueue
-- Coordinates with Leatherworker on early game to supply leather armor before iron is available
+**Subrole (shared pool):** Smelt ingots and commission Iron Golems
+- When defenders are fully armored, smelts raw ore as a buffer reserve for rapid rearming after fights
+- When Librarian signals that prosperity and iron thresholds are met, builds the Iron Golem by consuming 36 ingots
+- Coordinates with Weaponsmith to avoid both smelting when ore supply is limited — Weaponsmith has smelt priority
 
-**Deposits:** Armor pieces (helmet, chestplate, leggings, boots)
+**Deposits:** Armor pieces (helmet, chestplate, leggings, boots), smelted ingots (surplus)
 **Withdraws:** Ingots, leather (early tier), coal from shared inventory
-**Key collaborators:** Weaponsmith (full Guard kit coordination and shared smelting), Leatherworker (early armor supply), Toolsmith (ore deposits), Guard (armor recipient)
+**Key collaborators:** Weaponsmith (armor recipient and smelt coordination), Leatherworker (early armor supply), Toolsmith (ore deposits), Librarian (Iron Golem commission trigger)
 
 ---
 
 ##### Fletcher
-**Primary role:** Craft arrows for Guards
-- Draws feathers (from Shepherd), sticks and wood (from Farmer), and flint (from Fisherman/Mason) from shared inventory
-- Crafts arrows in bulk; deposits to shared inventory for Guard withdrawal
-- Monitors Guard arrow count — during active threat periods, prioritizes arrow production above all else
+**Primary role:** Ranged defense and arrow/bow crafting
+- During `THREAT_ALERT`, takes a stationary position near the stockpile or a structure and provides ranged fire with bow and arrows — does not pursue threats
+- Does not engage in melee; holds their defensive post and fires from range until threat is resolved
+- After threat is resolved, returns to crafting
+- During peaceful periods, crafts arrows in bulk from feathers (Shepherd), sticks/logs (Farmer), and flint (Fisherman/Mason)
+- Crafts bows when material supply allows; deposits surplus arrows and bows to shared inventory
 
-**Subrole:** Gather wood and feathers directly when shared inventory supply is low
-- If feathers or sticks are low in the chest, paths to Shepherd's pen to collect directly or helps Farmer chop wood
+**Subrole (shared pool):** Gather wood and feathers directly when shared inventory supply is low
+- If feathers or sticks are below threshold in the chest, paths to Shepherd's pen or helps Farmer chop wood
 - Posts `NEED_MATERIALS: feathers` to NeedQueue if Shepherd is not producing enough to sustain arrow supply
-- Crafts bows when material supply allows — provides Guards with ranged capability
 
 **Deposits:** Arrows, bows
 **Withdraws:** Feathers (Shepherd), sticks/logs (Farmer), flint (Fisherman/Mason) from shared inventory
-**Key collaborators:** Shepherd (feather supply), Farmer (wood supply), Fisherman and Mason (flint supply), Guard (arrow and bow recipient)
+**Key collaborators:** Shepherd (feather supply), Farmer (wood supply), Fisherman and Mason (flint supply), Weaponsmith (coordinates ranged vs melee coverage during fights)
 
 ---
 
@@ -255,51 +209,53 @@ Subroles are the second entry in each villager's goal stack. The primary role ru
 
 ##### Toolsmith
 **Primary role:** Craft tools for the village workforce
-- Monitors NeedQueue for tool requests (Mason needs pickaxes, Farmer needs hoes, Fisherman needs rods, Guard needs repairing)
-- Draws ingots from shared inventory; crafts the appropriate tool; deposits or delivers directly to the requesting villager
+- Monitors NeedQueue for tool requests (Mason needs pickaxes, Farmer needs hoes, Fisherman needs rods)
+- Draws ingots from shared inventory; crafts the appropriate tool at a crafting table; deposits or delivers directly to the requesting villager
 - Tracks which villagers have tools — a Mason without a pickaxe cannot quarry, a Farmer without a hoe cannot farm; these are treated as high-urgency requests
 
-**Subrole:** Mine ore and coal
+**Subrole (shared pool):** Mine ore and emeralds
 - When tool demand is met and shared inventory ore supply is low, switches to mining
-- Uses Cartographer's cave map data to identify ore-rich areas before heading out
+- Uses Cartographer's cave map and loot structure data to identify ore-rich areas and dungeon/mineshaft chests before heading out
 - Posts `NEED_ESCORT` if the target area is flagged as dangerous
-- Mines iron ore, coal, and other ores; takes enough for immediate tool production and deposits all surplus — Weaponsmith and Armorer draw from this surplus to equip Guards
+- Mines iron ore, coal, and emerald ore; loots chests in mapped structures for additional emeralds; deposits all surplus to shared inventory
+- Weaponsmith and Armorer draw from ore surplus to equip defenders; emeralds flow into the village economy
 
-**Deposits:** Pickaxes, axes, hoes, fishing rods, shovels, iron ore, coal, surplus ore
+**Deposits:** Pickaxes, axes, hoes, fishing rods, shovels, iron ore, coal, emeralds, surplus ore
 **Withdraws:** Ingots (smelted), coal (for own smelting) from shared inventory
-**Key collaborators:** Mason (primary tool consumer), Farmer (hoe/axe supply), Fisherman (fishing rod), Weaponsmith and Armorer (ore deposits feed their crafting), Cartographer (cave maps for mining routes), Guard (escort during dangerous mining runs)
+**Key collaborators:** Mason (primary tool consumer), Farmer (hoe/axe supply), Fisherman (fishing rod), Weaponsmith and Armorer (ore deposits feed their crafting), Cartographer (cave and loot maps for mining routes), Weaponsmith (escort during dangerous mining runs)
 
 ---
 
 ##### Cleric
 **Primary role:** Heal injured villagers and manage the medical supply
 - Monitors all villagers' health — when a villager posts `NEED_HEALING` or drops below a health threshold, Cleric paths to them and applies healing
-- After a Guard fight, moves to injured Guards and heals using the medical supply pool
+- After a fight, moves to injured Weaponsmiths and other combat-damaged villagers and heals using the medical supply pool
 - Heals the player on proximity when they enter the village — uses the same supply pool, so a depleted Cleric has nothing left for the player
 - Stays available at night for combat emergencies
 
-**Subrole:** Brew potions and maintain supply stockpile
-- When no active healing is needed, brews healing potions from ingredients in shared inventory
-- Maintains a medical supply reserve large enough to handle a full Guard fight without running dry
+**Subrole (shared pool):** Brew potions and maintain supply stockpile
+- When no active healing is needed, brews healing potions from ingredients in shared inventory at the brewing stand
+- Maintains a medical supply reserve large enough to handle a full fight without running dry
 - If ingredients are unavailable, posts `NEED_MATERIALS: [ingredient]` to NeedQueue — the Librarian may convert this into a player quest
 
 **Deposits:** Healing potions and supplies (to shared inventory medical reserve)
 **Withdraws:** Brewing ingredients, glass bottles, fuel from shared inventory
-**Key collaborators:** Guard (primary healing recipient after combat), all villagers (general health maintenance), Librarian (supply shortages flagged for quest generation or NeedQueue escalation)
+**Key collaborators:** Weaponsmith (primary healing recipient after combat), all villagers (general health maintenance), Librarian (supply shortages flagged for quest generation or NeedQueue escalation)
 
 ---
 
 ##### Librarian
 **Primary role:** Village administrator — coordinate priorities, manage NeedQueue, log all events
 - Monitors shared inventory supply levels continuously; posts NeedQueue requests when supplies drop below threshold — acts as the trigger for the whole village economy
-- Logs all village events: deaths, completed builds, threats defeated, food shortages, Guard fights
+- Logs all village events: deaths, completed builds, threats defeated, food shortages, fights
 - Manages the build queue: populates it based on village population and prosperity needs; feeds it to Cartographer and Mason
 - At prosperity thresholds, unlocks advanced recipes: enchanted tools for Toolsmith, better weapon tiers for Weaponsmith
+- Triggers Iron Golem commissioning when prosperity and iron thresholds are met
 
-**Subrole:** Give player quests and manage village reputation
+**Subrole (shared pool):** Give player quests and manage village reputation
 - When a player with sufficient reputation is present, offers quests sourced from active NeedQueue items (clear a dungeon, deliver materials, escort a Toolsmith on a mining run)
 - Rewards come from village stock — Librarian controls what the village can afford to give
-- Tracks player reputation score — donations and completed quests raise it, attacking villagers drops it
+- Tracks player reputation score — donations, completed quests, and successful trades raise it; attacking villagers drops it; reputation affects trade prices across all villagers
 
 **Deposits:** Nothing physical — Librarian's output is coordination, information, and event logs
 **Withdraws:** Nothing beyond personal food and survival needs
@@ -327,12 +283,13 @@ Shepherd (meat/wool/leather/feathers) ──► Butcher (cooks)─┘
 Leatherworker (leather goods) ───────────────────────────►
 
 TOOL / ORE CHAIN
-Toolsmith mines ore ──────────────────────────────────────► deposits ore surplus ──► Shared Inventory
+Toolsmith mines ore + emeralds ──────────────────────────► deposits surplus ──► Shared Inventory
+Toolsmith loots mapped structure chests ─────────────────► deposits emeralds ──► Shared Inventory (treasury)
 Toolsmith crafts tools ──────────────────────────────────► Mason, Farmer, Fisherman withdraw
-Weaponsmith draws ore ──► smelts ──► crafts weapons ──────► Guard equips
-Armorer draws ingots ────────────► crafts armor ──────────► Guard equips
-Leatherworker ───────────────────► crafts leather armor ──► Guard (early tier)
-Fletcher draws feathers/wood/flint ──► crafts arrows ─────► Guard equips
+Weaponsmith draws ore ──► smelts ──► crafts weapons ──────► equips self + deposits surplus
+Armorer draws ingots ────────────► crafts armor ──────────► delivers to Weaponsmith + Fletcher
+Leatherworker ───────────────────► crafts leather armor ──► Weaponsmith (early tier)
+Fletcher draws feathers/wood/flint ──► crafts arrows/bows ► equips self + deposits surplus
 
 BUILD CHAIN
 Cartographer surveys ──────────► plans build sites ──► feeds Librarian build queue
@@ -340,20 +297,29 @@ Mason checks queue ────────────► fetches materials ─
 Mason quarrying subrole ───────► deposits stone surplus ──► Shared Inventory
 
 DEFENSE CHAIN
-Cartographer flags threats ────────────────────────────── Guard extends patrol to flagged area
-Guard patrols ──► passes stockpile chests on every loop ── Iron Golem stationed at storehouse
-Guard detects threat ──► THREAT_ALERT ──────────────────► all non-combat villagers SHELTER
-                                                         ► one Guard per Bell holds at stockpile
+Cartographer flags threats ────────────────────────────── Weaponsmith extends patrol to flagged area
+Weaponsmith patrols ──► passes stockpile on every loop ── Iron Golem stationed at storehouse
+Weaponsmith detects threat ──► THREAT_ALERT ────────────► all non-combat villagers SHELTER
+                                                         ► one Weaponsmith holds at stockpile
+                                                         ► Fletcher holds position + fires ranged
                                                          ► Iron Golem engages threats near chests
-Guard engages mob ──► fight resolves ───────────────────► Cleric heals Guard
-Weaponsmith / Armorer / Fletcher restock Guard ─────────► Guard ready for next fight
+Weaponsmith engages mob ──► fight resolves ─────────────► Cleric heals Weaponsmith
+Armorer prepares emergency gear ────────────────────────► Weaponsmith + Fletcher rearm
 Librarian checks prosperity + iron supply ──────────────► Armorer builds Iron Golem (36 ingots)
 Iron Golem dies ───────────────────────────────────────► IronGolemSystem vacates slot ──► Librarian commissions replacement
 Cartographer marks area cleared ───────────────────────► Toolsmith / Mason resume work in area
 
 ESCORT CHAIN
-Toolsmith or Mason posts NEED_ESCORT ──► Guard accepts ──► escorts out and back to village
-Cartographer posts NEED_ESCORT for scouting runs ───────► Guard escorts
+Toolsmith or Mason posts NEED_ESCORT ──► Weaponsmith accepts ──► escorts out and back
+Cartographer posts NEED_ESCORT for scouting runs ───────────► Weaponsmith escorts
+
+TRADE CHAIN
+Any villager assesses personal inventory + stockpile ──► generates dynamic buy/sell offers
+Villager has surplus ──► offers to sell to player or other villagers for emeralds
+Villager needs item ──► offers emeralds to buy from player or other villagers
+Emeralds from Toolsmith mining / loot ──► Shared Inventory treasury ──► villagers withdraw to fund trades
+Player sells to village ──► emeralds enter village pool ──► economy grows
+Player buys from village ──► emeralds leave village pool ──► creates scarcity pressure
 
 ADMIN CHAIN
 Librarian monitors inventory ──► posts NeedQueue requests ──► producers respond
@@ -367,13 +333,13 @@ Each producer takes what their primary role needs first. Surplus flows to shared
 ---
 
 ## Player Interaction
-Vanilla trading is fully removed. The player interacts with the village in these ways only:
+The player is a trading partner and optional participant — not required for village survival.
 
-- **Merchant** — the only trade interface. Opens a shop UI showing what the village currently has in stock. If the village has no iron, there is no iron for sale. Prices shift based on village supply levels
-- **Cleric** — walks up to the player and heals them on village entry, no menu. Only works if the Cleric has enough supplies. No trade, no interaction required — proximity triggered
-- **Librarian** — can give the player quests (clear a dungeon, deliver materials, escort a Toolsmith on a mining run). Rewards come from village stock
-- **Donating** — player can deposit materials into the village chest directly, boosting prosperity and restocking the Merchant over time
-- **Village reputation** — player reputation with the village affects Merchant prices, whether the Librarian offers quests, and whether Guards are friendly or hostile
+- **Any villager** — right-clicking any villager opens a dynamic trade screen showing only what that villager currently has in surplus (sell offers) or needs (buy offers with emeralds). Offers are generated live from their personal inventory and the village stockpile. Prices shift based on supply levels and player reputation
+- **Cleric** — walks up to the player and heals them on village entry, no menu. Only works if the Cleric has enough supplies — proximity triggered, no interaction required
+- **Librarian** — can give the player quests sourced from active NeedQueue items (clear a dungeon, deliver materials, escort a Toolsmith on a mining run). Rewards come from village stock
+- **Donating** — player can deposit materials or emeralds into the village stockpile chest directly, boosting prosperity and injecting money into the village economy
+- **Village reputation** — player reputation affects trade prices across all villagers, whether the Librarian offers quests, and whether Weaponsmiths are friendly or hostile on approach
 
 The village does not need the player to survive. The player is an optional participant.
 
@@ -384,15 +350,15 @@ The village does not need the player to survive. The player is an optional parti
 ### 1. Villager AI Goal Stack
 Each villager evaluates goals in priority order:
 1. **Survival** — eating when hungry, seeking the Cleric when injured, sheltering from threats
-2. **Job task** — class-specific behavior (mine, build, craft, guard, etc.)
-3. **Social** — post needs, respond to requests, negotiate, hire
+2. **Job task** — class-specific behavior (mine, build, craft, patrol, etc.)
+3. **Social** — post needs, respond to requests, trade, negotiate
 
 A starving or badly injured villager will not perform their job until their survival need is met. Use the vanilla `Brain` / `BehaviorControl` system. Each class registers its own set of behavior tasks into the brain. Extend `VillagerEntity` or the loader equivalent — do not build new entities from scratch.
 
 ### 2. Hunger System
 Every villager has a hunger value that depletes over time.
 
-- Depletion rate varies by role — physically demanding roles (Toolsmith mining, Mason quarrying, Guard patrolling) burn hunger faster than passive roles (Librarian, Merchant, Nitwit)
+- Depletion rate varies by role — physically demanding roles (Toolsmith mining, Mason quarrying, Weaponsmith patrolling) burn hunger faster than passive roles (Librarian, Nitwit)
 - When hunger drops below a threshold the villager enters a `HUNGRY` state, overrides their job goal, and paths to the village food supply to eat
 - If the food supply is empty they cannot eat and begin losing health passively over time
 - Nitwits consume food at a normal rate despite contributing nothing — this is intentional and creates real pressure on struggling villages
@@ -401,7 +367,7 @@ Every villager has a hunger value that depletes over time.
 ### 3. Health System
 Every villager has a health value that can be reduced by combat, environment, and starvation.
 
-- **Combat damage** — Guards take damage fighting mobs
+- **Combat damage** — Weaponsmiths take damage fighting mobs; Fletcher can take damage if threats reach their position
 - **Environmental damage** — Toolsmith and Mason can be hurt by cave-ins, lava, or mob encounters while gathering; Mason can take fall damage during construction
 - **Starvation damage** — any villager who cannot eat due to empty food supply loses health passively
 - When health drops below a threshold the villager enters a `SEEK_HEALING` state, overrides their job goal, and paths to the Cleric
@@ -420,19 +386,24 @@ The stockpile is a network of physical chests placed in the world inside the vil
 - Villagers use a `PATH_TO_STOCKPILE` behavior to walk to the nearest registered chest before depositing or withdrawing — they do not teleport items in
 - The player can deposit into any registered stockpile chest directly — the mod detects the interaction and credits the village prosperity score
 
+**Workstation tracking:**
+- `WorkstationTracker` maintains a list of `BlockPos` for all registered crafting tables, furnaces, smokers, and brewing stands in the village
+- Villagers must physically path to a workstation to craft, smelt, cook, or brew — no items are created without the villager being at the correct block
+- Workstations are registered at village init from detected vanilla structures and expanded by Mason builds
+
 **Supply monitoring:**
 - The Librarian scans all registered chest contents on a periodic tick to detect shortages
-- Low supply triggers NeedQueue posts via `LibrarianCoordinator` exactly as before — the chest network is the source of truth, not a separate counter
-- Merchant pulls from this network to determine what is currently for sale — if a chest has no iron, iron is not available
+- Low supply triggers NeedQueue posts via `LibrarianCoordinator` — the chest network is the source of truth
+- Trade offers shown to players and other villagers are drawn from live stockpile counts
 
 **Abstract simulation:**
 - When chunks are unloaded, `VillageStockpile` snapshots chest contents into a lightweight item-count map stored on `SmartVillage`
-- The abstract batch update applies production and consumption to this snapshot
+- The abstract batch update approximates what villagers would have done — simulating the actions (mine tick, craft tick, smelt tick) rather than directly adding items — and applies results to the snapshot
 - On reconciliation, the snapshot is written back to the physical chests when chunks reload
 
 **Defense:**
-- The stockpile chest cluster is a high-value target — Guards include it on every patrol loop (see Guard role)
-- Iron golems are stationed permanently at the storehouse (see Core System 15)
+- The stockpile chest cluster is a high-value target — Weaponsmiths include it on every patrol loop
+- Iron golems are stationed permanently at the storehouse (see Core System 13)
 
 ### 5. NeedQueue (Communication System)
 The backbone of the mod. A server-side queue scoped to each village.
@@ -440,22 +411,25 @@ The backbone of the mod. A server-side queue scoped to each village.
 - Villagers post a `NeedRequest` containing: `requestType`, `reward`, `urgency`, `poster`
 - Other villagers check the queue during idle state and accept matching jobs
 - Example flows:
-  - Toolsmith detects hostile mobs while mining → posts `NEED_ESCORT` → Guard accepts → escorts Toolsmith to mine and back
+  - Toolsmith detects hostile mobs while mining → posts `NEED_ESCORT` → Weaponsmith accepts → escorts Toolsmith to mine and back
   - Weaponsmith needs ore and chest is empty → posts `WANT_TO_BUY: iron` → Toolsmith prioritizes a mining run
   - Mason needs stone and has none → posts `NEED_MATERIALS: stone` → Mason's own subrole triggers a quarry run, or another Mason drops off surplus
-  - Injured Guard has no Cleric available → posts `NEED_HEALING` → Cleric prioritizes them on return
+  - Injured Weaponsmith has no Cleric available → posts `NEED_HEALING` → Cleric prioritizes them on return
+  - Villager needs an item they cannot produce → posts `WANT_TO_BUY_FROM_PLAYER: [item]` → Librarian may surface this as a player quest
 - Keep this system decoupled — economy, defense, and expansion route through the NeedQueue, not through direct calls to each other
 
 ### 6. Defense System
-- Guards run continuous perimeter patrol routes around the village boundary; stockpile chest cluster is a mandatory waypoint on every loop
-- On threat detection, Guard broadcasts a `THREAT_ALERT` to the village
+- Weaponsmiths run continuous perimeter patrol routes around the village boundary; stockpile chest cluster is a mandatory waypoint on every loop
+- On threat detection, a Weaponsmith broadcasts `THREAT_ALERT` to the village
 - Non-combat villagers enter a `SHELTER` goal state and pathfind to the nearest building
-- During `THREAT_ALERT`, one Guard per Bell unit is designated chest guardian — holds position at the stockpile and does not pursue threats
-- Cleric moves to assist injured Guards after a fight
+- Fletcher villagers take a stationary defensive position and provide ranged fire — they do not pursue threats
+- During `THREAT_ALERT`, one Weaponsmith is designated chest guardian — holds position at the stockpile and does not pursue the threat; remaining Weaponsmiths engage
+- Armorer stays back and prepares emergency replacement gear
+- Cleric moves to assist injured defenders after a fight
 - Alert clears after a cooldown with no threats detected
-- Village memory logs where threats originated — Toolsmith and Mason avoid flagged areas until Guards clear them
-- Guards also respond to `NEED_ESCORT` from Toolsmith or Mason heading out to gather materials
-- Iron golems defend the stockpile area alongside Guards (see Core System 15)
+- Village memory logs where threats originated — Toolsmith and Mason avoid flagged areas until Weaponsmiths clear them
+- Weaponsmiths also respond to `NEED_ESCORT` from Toolsmith or Mason heading out to gather materials
+- Iron golems defend the stockpile area alongside Weaponsmiths (see Core System 13)
 
 ### 7. Village Expansion
 - Mason villagers check a build queue coordinated by the Librarian
@@ -463,43 +437,33 @@ The backbone of the mod. A server-side queue scoped to each village.
 - Cartographer plans build sites and shares locations with Mason
 - Mason state machine: `IDLE → CHECK_QUEUE → FETCH_MATERIALS → PATHFIND_TO_SITE → BUILD → IDLE`
 - Mason requires tools from the village inventory (produced by Toolsmith) — waits or posts a NeedRequest if none available
-- Build this system last — it depends on the economy and NeedQueue being stable
 
 ### 8. Village Prosperity Score
 A hidden score tracking overall village health. Drives growth and unlocks.
 
-Increases with: successful trades, buildings completed, threats defeated, food surplus, player donations, villagers at full health and hunger
+Increases with: successful trades (villager-to-villager and player trades), buildings completed, threats defeated, food surplus, player donations, villagers at full health and hunger
 Decreases with: villager deaths, unmet needs, food shortage, villagers starving or injured with no Cleric, failed build attempts
 
 Drives:
 - New villager spawns (only when food, beds, and jobs exist to support them)
 - Building tier unlocks
-- Merchant stock volume and variety
 - Librarian unlocking enchanted tool recipes for Toolsmiths and Weaponsmiths
+- Iron Golem commissioning threshold
 
-### 9. Population & Role Control
+### 9. Population & Role Assignment
 - Villages start small and grow only when they can support new members (food + beds + available job)
-- New villager class is assigned based on what the village needs most at time of birth AND the village's current prosperity tier
-- Advanced roles are gated behind prosperity thresholds — a freshly detected village cannot immediately have a full economy regardless of how many vanilla villagers are present
-- Villagers beyond the starting trio that join before prosperity thresholds are met are assigned as Farmers (more food production, but no advanced output)
-- If the only critical role villager dies, the village prioritizes replacing it at next birth — but only if prosperity still meets that role's tier threshold; if prosperity has dropped below threshold, the replacement becomes a Farmer instead
-- Death consequences ripple through the economy — losing a Toolsmith slows ore and tool supply, losing a Guard increases threat frequency, losing the only Farmer starts a starvation cascade, losing the Mason halts village expansion
-
-**Role unlock tiers (implemented in `VillageDetector.chooseProfession()`):**
-
-| Tier | Prosperity | Roles unlocked |
-|---|---|---|
-| 0 | 0+ | Librarian, Farmer, Guard |
-| 1 | 50+ | Cleric, Fisherman |
-| 2 | 100+ | Shepherd, Butcher |
-| 3 | 150+ | Leatherworker, Toolsmith |
-| 4 | 200+ | Weaponsmith, Armorer, Fletcher, Mason |
+- No custom professions exist — all roles are vanilla professions with overridden behavior
+- When a new villager is born, the village calculates a weighted profession score for each role based on: current gap (how many of this role the village has vs needs), resource availability (a second Weaponsmith is useless if there is no iron), and the newborn's personality trait (brave villagers weight toward Weaponsmith; generous toward Cleric; cautious toward Farmer or Fisherman)
+- The highest-scoring profession is assigned — this is the village's "choice" expressed through weighted need, not random
+- No hard caps on any profession — the weighting system naturally produces sensible distributions; if the village has five Farmers and one Weaponsmith, the next birth will heavily weight Weaponsmith
+- Farmer and Weaponsmith always have a baseline weight so the village never spawns with zero food production or zero defense
+- Death consequences ripple through the economy — losing the only Toolsmith slows ore and tool supply, losing all Weaponsmiths increases threat frequency and patrol stops, losing the only Farmer starts a starvation cascade
 
 ### 10. Day/Night Cycle Behavior
 - Villagers go home and sleep at night — enforced, not optional
 - Toolsmith and Mason do not go out to gather materials at night
-- Guards remain active at night on rotation — the only villagers with a night work goal
-- Night raids are more dangerous — the village is at reduced capacity
+- Weaponsmiths remain active at night on rotation — the only non-Cleric villagers with a night work goal; night-rotation Weaponsmith stations at the stockpile rather than the full perimeter
+- Night raids are more dangerous — the village is at reduced defense capacity
 - Cleric stays available at night for emergencies
 - A hungry villager will wake and eat before sleeping if food is available
 
@@ -507,43 +471,23 @@ Drives:
 - Villagers have simple personality traits: brave, cautious, greedy, generous
 - Traits bias their NeedQueue decisions — a brave Toolsmith may attempt a mining run solo, a cautious one always posts `NEED_ESCORT` first
 - Traits also affect hunger and health behavior — a stubborn villager might ignore the `SEEK_HEALING` goal longer than they should
-- Inter-villager reputation: Guards who consistently complete escort jobs earn trust and better pay over time
-- Greedy Merchants charge more and lose village favor if prices are too high relative to supply
+- Traits influence profession assignment at birth (brave → Weaponsmith weight, generous → Cleric weight, cautious → Farmer/Fisherman weight, greedy → Toolsmith/Weaponsmith weight)
+- Greedy villagers price their trade offers higher — other villagers may prefer trading with non-greedy alternatives if available
+- Player reputation is tracked village-wide by the Librarian and affects trade prices across all villagers, not just a dedicated merchant
 
 ### 12. Village Memory
 - The village tracks where threats have occurred and where villagers have died
-- Toolsmith and Mason avoid flagged areas until a Guard clears them
-- Cartographer maintains and shares this map data with Guards, Toolsmith, and Mason
+- Toolsmith and Mason avoid flagged areas until a Weaponsmith clears them
+- Cartographer maintains and shares this map data with Weaponsmiths, Toolsmith, and Mason
 
-### 13. Two-Mode Village Simulation
-Villages run in one of two modes depending on player proximity. This keeps the village economy running without the RAM cost of permanently force-loaded chunks.
-
-**Full simulation** — player is within ~128 blocks
-- Village chunks are loaded normally
-- Villagers physically move, pathfind, and execute AI tasks in real time
-- All systems run at full tick rate
-
-**Abstract simulation** — player is beyond ~128 blocks
-- Village chunks are unloaded to free RAM
-- Village state is stored as lightweight data: hunger levels, food supply, tool counts, NeedQueue entries, health values, build progress
-- A batch update runs every few minutes and calculates what would have happened — food consumed, tools produced, ore mined, structures advanced, threats resolved — and applies it to the stored state
-- No pathfinding, no entity AI, no chunk overhead
-
-**Reconciliation** — when player returns within range
-- Chunks reload and full simulation resumes
-- Abstract state is applied to the physical village — villagers spawn at correct health and hunger, inventory reflects what was produced, any deaths that occurred are applied
-- The village should feel like it kept running the whole time
-
-This approach allows multiple villages to exist and simulate simultaneously without stacking hundreds of MB of loaded chunks per village.
-
-### 15. Iron Golem Defense System
-Villages commission iron golems as permanent stockpile guardians. These are not naturally spawning vanilla golems — they are intentionally built by the village when the conditions are met.
+### 13. Iron Golem Defense System
+Villages commission iron golems as permanent stockpile guardians. These are not naturally spawning vanilla golems — they are intentionally built by the village when conditions are met.
 
 **Commissioning:**
 - The Librarian triggers golem creation when two conditions are met simultaneously: village prosperity score exceeds a threshold (configurable, default ~250) AND the stockpile contains at least 36 iron ingots (equivalent to 4 iron blocks)
 - The Armorer "builds" the golem by consuming the 36 ingots from the stockpile and calling `IronGolemSystem.spawnGolem()` — this spawns a vanilla `IronGolem` entity at the storehouse
-- The spawned golem's UUID is recorded in `SmartVillage.golems` so the village knows it owns this golem
-- A village can support at most one iron golem per Bell (same scaling as Guards) — Librarian will not commission more than this cap
+- The spawned golem's UUID is recorded in `SmartVillage.golems`
+- Village golem cap: one golem per 5 active villagers, maximum 3 — Librarian will not commission more than the cap
 
 **Behavior:**
 - Village-owned golems are permanently stationed at the stockpile chest cluster; they do not wander the village like vanilla golems
@@ -555,52 +499,88 @@ Villages commission iron golems as permanent stockpile guardians. These are not 
 **Replacement:**
 - When a village-owned golem dies, `IronGolemSystem` detects the death (entity remove event), removes the UUID from `SmartVillage.golems`, and marks the slot as vacant
 - The Librarian checks the vacant slot on its next monitoring tick — if prosperity and iron supply conditions are met again, it commissions a replacement via the Armorer
-- There is a cooldown of at least one in-game day before a replacement can be commissioned to prevent immediate respawning during an active raid
+- Cooldown of at least one in-game day before replacement to prevent immediate respawning during an active raid
 
 **Abstract simulation:**
 - Golem health is tracked in `SmartVillage` as a simple integer
 - Abstract batch updates apply threat-based damage to the golem; if health reaches zero the golem death is recorded and the slot is vacated
 - On reconciliation, if the golem died during abstract simulation it is not spawned; the Librarian will commission a replacement through normal conditions
 
----
+### 14. Emerald Economy
+Emeralds are the village currency. Supply is finite and must be earned — there is no infinite money.
 
-### 14. Inter-Village Trade (stretch goal)
-- When a village has surplus goods and the Cartographer has mapped a nearby village, the Librarian flags a trade run
-- Merchant posts `NEED_ESCORT` → Guard accompanies them to the destination village and back
-- Merchant carries surplus goods from their home village's inventory and returns with goods the home village lacks
-- A visiting Merchant's robe color identifies which village they came from — a cyan-robed Merchant in a Plains village is visibly a Desert village traveler
-- Creates a regional economy across multiple villages where biome resources flow between settlements
+**Starting supply:**
+- Each villager starts with 10 emeralds in their personal inventory as seed money for day-one trading
+- The village stockpile (treasury) starts at 0 emeralds
+- Villagers withdraw from the stockpile treasury before spending personal emeralds
+
+**How emeralds enter the economy:**
+- Toolsmith mines emerald ore during mining runs — the primary long-term growth source; emerald ore spawns in mountain biomes and as rare veins in other biomes
+- Toolsmith loots chests in mapped structures (dungeons, mineshafts, desert temples) — Cartographer marks these locations so Toolsmith knows where to go; this provides a money source for villages in non-mountain biomes
+- Player sells items to villagers — emeralds the player spends re-enter the village pool
+- Player donates emeralds directly to the stockpile — raises prosperity and grows the money supply
+
+**How emeralds leave the economy:**
+- Player buys from villagers and does not spend emeralds back — the primary money sink
+- This creates real scarcity pressure: a village that trades heavily with a player who never reinvests will eventually run low
+
+**Villager-to-villager trades:**
+- Villagers trade with each other using the same dynamic offer system as player trades
+- Emeralds circulate internally — a Farmer selling food to a Weaponsmith who needs it moves money within the village without reducing total supply
+- Internal trades do not add or remove emeralds from the village pool, they redistribute them
+
+### 15. Two-Mode Village Simulation
+Villages run in one of two modes depending on player proximity. This keeps the village economy running without the RAM cost of permanently force-loaded chunks.
+
+**Full simulation** — player is within ~128 blocks
+- Village chunks are loaded normally
+- Villagers physically move, pathfind, and execute AI tasks in real time
+- All systems run at full tick rate
+- The "no free items" rule applies strictly — every item must come from a real in-game action
+
+**Abstract simulation** — player is beyond ~128 blocks
+- Village chunks are unloaded to free RAM
+- Village state is stored as lightweight data: hunger levels, food supply, tool counts, NeedQueue entries, health values, build progress, emerald counts
+- A batch update runs every few minutes and approximates what villagers would have done — simulating the actions (mine tick, craft tick, smelt tick) rather than directly granting items; the simulation models the action, not the result in isolation
+- No pathfinding, no entity AI, no chunk overhead
+
+**Reconciliation** — when player returns within range
+- Chunks reload and full simulation resumes
+- Abstract state is applied to the physical village — villagers spawn at correct health and hunger, inventory reflects what was produced, any deaths that occurred are applied
+- The village should feel like it kept running the whole time
+
+This approach allows multiple villages to exist and simulate simultaneously without stacking hundreds of MB of loaded chunks per village.
 
 ---
 
 ## Starting State
 Villages spawn with little to nothing. This is intentional.
 
-**Starting roster:** one Librarian, one or two Farmers, one Guard
-**Starting inventory:** minimal food, no tools, no ore, minimal Cleric supplies
-**Starting buildings:** basic vanilla village structures only
+**Starting roster:** one Librarian, one or two Farmers, one Weaponsmith
+**Starting inventory:** minimal food, no tools, no ore, minimal Cleric supplies, 0 emeralds in stockpile (each starting villager carries 10 emeralds personally)
+**Starting buildings:** basic vanilla village structures only — must include at least one crafting table and one furnace detectable by `WorkstationTracker`
 
-The village must earn everything else. New professions only appear once prosperity thresholds are met — a Toolsmith won't appear until the village can support a non-food role, a Weaponsmith won't appear until the Toolsmith is producing enough ore surplus to feed a crafting chain. A village that spawns with a Nitwit in its starting roster is immediately at a disadvantage.
+The village must earn everything else. The weighted profession system naturally expands the village toward what it needs — more Farmers until food is stable, then Toolsmiths for tools and ore, then Armorers and Fletchers for defense support, then Masons for expansion. A village that spawns with a Nitwit in its starting roster is immediately at a disadvantage.
 
 ---
 
 ## Implementation Order
 Build in this order to avoid dependency issues:
 
-1. Register Guard and Merchant as custom professions — all other roles use vanilla professions with overridden behavior
-2. Physical chest stockpile network (StockpileChestTracker + VillageStockpile reads/writes real chests) + Librarian as coordinator
+1. Physical chest stockpile network (`StockpileChestTracker` + `VillageStockpile` reads/writes real chests) + Librarian as coordinator
+2. `WorkstationTracker` — register crafting tables, furnaces, smokers, brewing stands at village init; villagers must path to these to craft/smelt/cook/brew
 3. Hunger system — every villager needs this before anything else runs
-4. Health system — damage, starvation passive damage, death and role replacement
+4. Health system — damage, starvation passive damage, death and weighted role replacement
 5. NeedQueue communication system — most important logic, build this carefully
-6. Guard patrol + chest-cluster waypoints + threat alert + chest guardian assignment + civilian shelter behavior
+6. Weaponsmith patrol + stockpile waypoints + threat alert + chest guardian assignment + civilian shelter behavior + Fletcher ranged defense + Armorer equipment logistics
 7. Day/night cycle enforcement
 8. Cleric healing (villagers + player) tied to supply levels
 9. Iron golem defense system — Librarian commissions via Armorer when prosperity + iron thresholds met; golem stationed at storehouse; replacement logic on death
-10. Toolsmith mining subrole + Weaponsmith/Armorer crafting chain: Toolsmith deposits ore → Weaponsmith/Armorer process → Guard equips
-11. Mason building subrole + Cartographer planning: Cartographer maps sites → Mason builds (storehouse expansion included)
-12. Prosperity score + population growth gating
-13. Personality traits + inter-villager reputation + village memory
-14. Inter-village trade caravans (stretch goal)
+10. Toolsmith mining subrole (ore + emerald ore + structure loot) + Weaponsmith/Armorer crafting chain: Toolsmith deposits ore → Weaponsmith/Armorer process → equip themselves
+11. Dynamic per-villager trading (VillagerTradeEvaluator) — player-facing and villager-to-villager; emerald economy tracking
+12. Mason building subrole + Cartographer planning: Cartographer maps sites → Mason builds (storehouse + workstation expansion included)
+13. Prosperity score + weighted population growth
+14. Personality traits + inter-villager reputation + village memory
 
 ---
 
@@ -608,25 +588,25 @@ Build in this order to avoid dependency issues:
 - Always ask for the mod loader and Minecraft version before writing any code — APIs differ significantly between Fabric/Forge and MC versions
 - Prefer extending vanilla systems (`Brain`, `BehaviorControl`, POI, workblock registration) over building from scratch
 - All villager AI should use the goal/behavior task system, not tick-based overrides
-- Vanilla player trading is completely removed — do not implement it or reference it
-- Only two custom professions exist: Guard and Merchant. Every other role is a vanilla profession with new behavior tasks registered into the Brain
-- Guard uses the vanilla Bell as their job site block — do not register a custom workblock for Guard
-- Workblocks are job site anchors only — profession is assigned at birth based on village need, not by villager claiming a block
-- Subroles are secondary goal stack entries — a Toolsmith's primary goal is crafting tools, the mining subrole activates when primary work is idle or when ore is needed
+- No custom professions exist — all roles are vanilla professions with behavior tasks registered into the Brain via `ProfessionBehaviorRegistry`; `ModProfessions.java` registers no custom professions and can be removed or left as an empty placeholder
+- Workblocks are job site anchors only — profession is assigned at birth via weighted need calculation, not by villager claiming a block
+- Subroles are drawn from a shared behavior pool — a villager checks the NeedQueue during idle time and picks up any task they are capable of based on tools in their personal inventory; do not hardcode subroles per profession
 - The NeedQueue is the backbone of the mod — get it right before building anything on top of it
 - Keep systems decoupled: economy, defense, and expansion should not call each other directly
 - Hunger and health are survival layer systems — they must override job and social goals when triggered
-- The Merchant shop UI should only reflect actual village inventory — never hardcoded trades
+- Trade offers must reflect actual villager inventory and stockpile levels — never hardcoded trade lists
 - The Cleric healing the player requires no player input — proximity triggered, supply dependent, same supply pool as villager healing
 - Nitwits have no goals beyond hunger and sleep — do not assign them any job behavior
 - The Librarian coordinates the village — manages the NeedQueue log, tracks supply levels, drives build queue population; treat them as the administrative brain of the village
 - The village should function and evolve whether or not the player is present
-- Villages run in two modes: full simulation (chunks loaded, player within ~128 blocks) and abstract simulation (chunks unloaded, state tracked as data with batch updates). Never force-load village chunks permanently — this would stack hundreds of MB of RAM per village
-- Abstract simulation must track at minimum: per-villager hunger and health, shared inventory contents (chest snapshot), NeedQueue state, build queue progress, villager deaths, and golem health — enough to reconcile correctly when full simulation resumes
-- The stockpile is physical chests in the world, not a virtual data structure — `VillageStockpile` reads actual `ChestBlockEntity` tile entities at the positions tracked by `StockpileChestTracker`; villagers must physically path to a chest to deposit or withdraw
-- Iron golems are village-commissioned entities, not naturally spawning ones — do not rely on vanilla golem spawning mechanics. Spawn them via `IronGolemSystem.spawnGolem()` and track their UUID in `SmartVillage`
-- Guards always include the stockpile chest cluster as a patrol waypoint — never generate a patrol route that skips the storehouse; the chest area is the highest-value target in the village
-- During `THREAT_ALERT`, one Guard per Bell is designated chest guardian — this assignment must be tracked explicitly so the remaining Guards can engage the threat while the guardian holds position
+- Villages run in two modes: full simulation (chunks loaded, player within ~128 blocks) and abstract simulation (chunks unloaded, state tracked as data with batch updates). Never force-load village chunks permanently
+- Abstract simulation approximates real actions — simulate the action tick, not a direct item grant; the rule is "no free items" in full sim, and "approximated real actions" in abstract sim
+- Abstract simulation must track at minimum: per-villager hunger and health, shared inventory contents (chest snapshot), NeedQueue state, build queue progress, villager deaths, golem health, emerald counts — enough to reconcile correctly when full simulation resumes
+- The stockpile is physical chests — `VillageStockpile` reads actual `ChestBlockEntity` tile entities; villagers must physically path to a chest to deposit or withdraw
+- Villagers must physically path to a workstation (`WorkstationTracker`) to craft, smelt, cook, or brew — never grant crafted items without the villager being at the correct block
+- Iron golems are village-commissioned entities, not naturally spawning ones — spawn via `IronGolemSystem.spawnGolem()` and track UUID in `SmartVillage`
+- Weaponsmiths always include the stockpile chest cluster as a patrol waypoint — never generate a patrol route that skips the storehouse
+- During `THREAT_ALERT`, one Weaponsmith is designated chest guardian — this assignment must be tracked explicitly
 
 ---
 
@@ -634,19 +614,20 @@ Build in this order to avoid dependency issues:
 
 | File | Responsibility |
 |---|---|
-| `src/main/java/com/smartvillager/SmartVillager.java` | Main mod entry point that registers professions and entity attachments |
-| `src/main/java/com/smartvillager/registration/ModProfessions.java` | Registers custom Guard and Merchant villager professions with their POI associations |
-| `src/main/java/com/smartvillager/registration/ModAttachments.java` | Defines NeoForge entity attachments for villager backpack, hunger, and health data |
+| `src/main/java/com/smartvillager/SmartVillager.java` | Main mod entry point that registers entity attachments and wires event handlers |
+| `src/main/java/com/smartvillager/registration/ModAttachments.java` | Defines NeoForge entity attachments for villager backpack, hunger, health, personality, and emerald wallet data |
 | `src/main/java/com/smartvillager/ai/ProfessionBehaviorRegistry.java` | Centralizes profession-specific Brain behavior injection hooked into villager brain refresh |
 | `src/main/java/com/smartvillager/village/SimulationMode.java` | Enum for full vs. abstract village simulation modes based on player proximity |
-| `src/main/java/com/smartvillager/village/MerchantColor.java` | Maps villager biome types to merchant robe color palettes with random selection per village |
 | `src/main/java/com/smartvillager/village/VillageRegistry.java` | Persisted SavedData registry mapping villages by UUID and Bell anchor position |
 | `src/main/java/com/smartvillager/village/VillageStockpile.java` | Reads and writes to physical chest TileEntities at registered positions; aggregates item counts across the full chest network; snapshots to/from abstract sim |
 | `src/main/java/com/smartvillager/village/StockpileChestTracker.java` | Tracks the list of BlockPos for all registered stockpile chests; handles chest registration on village init and storehouse expansion by Mason |
+| `src/main/java/com/smartvillager/village/WorkstationTracker.java` | Tracks BlockPos for all registered crafting tables, furnaces, smokers, and brewing stands; villagers must path to these to perform crafting/smelting/cooking/brewing |
 | `src/main/java/com/smartvillager/village/LibrarianCoordinator.java` | Scans village stockpile against thresholds to detect and flag shortages for NeedQueue posting |
-| `src/main/java/com/smartvillager/village/VillagerInteractionHandler.java` | Blocks vanilla villager trading entirely to route interactions through mod systems |
-| `src/main/java/com/smartvillager/village/SmartVillage.java` | Stores all persistent village data including roster, stockpile, threat state, and abstract health tracking |
-| `src/main/java/com/smartvillager/village/VillageDetector.java` | Detects vanilla villages, assigns professions at birth, and switches simulation modes based on player proximity |
+| `src/main/java/com/smartvillager/village/VillagerInteractionHandler.java` | Opens per-villager dynamic trade screen on player interaction; routes through VillagerTradeEvaluator |
+| `src/main/java/com/smartvillager/village/SmartVillage.java` | Stores all persistent village data including roster, stockpile, threat state, emerald treasury, and abstract health tracking |
+| `src/main/java/com/smartvillager/village/VillageDetector.java` | Detects vanilla villages, assigns professions at birth via weighted need calculation, and switches simulation modes based on player proximity |
+| `src/main/java/com/smartvillager/village/ProsperitySystem.java` | Event-driven prosperity adjustments: villager death (−30), threat defeated (+20), structure built (+15), trade completed (+10), player donation (+5), villager starving (−5) |
+| `src/main/java/com/smartvillager/trade/VillagerTradeEvaluator.java` | Generates dynamic buy/sell trade offers per villager based on personal inventory, stockpile levels, and player reputation; used for both player trades and villager-to-villager trades |
 | `src/main/java/com/smartvillager/inventory/ArmorSlot.java` | Enum for the four armor equipment slots in villager backpack |
 | `src/main/java/com/smartvillager/inventory/VillagerBackpack.java` | Per-villager personal inventory with 15 general slots and 4 armor slots, serializable and defensive |
 | `src/main/java/com/smartvillager/hunger/VillagerHunger.java` | Per-villager hunger value attachment with depletion and restoration mechanics |
@@ -655,7 +636,7 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/health/HealthSystem.java` | Applies starvation damage and manages health state in both full and abstract simulations |
 | `src/main/java/com/smartvillager/health/VillagerHealth.java` | Per-villager health attachment that syncs with vanilla entity and tracks healing needs |
 | `src/main/java/com/smartvillager/needqueue/NeedPriority.java` | Enum (low/normal/high/urgent) for prioritizing need requests |
-| `src/main/java/com/smartvillager/needqueue/NeedTypes.java` | Defines all need request type identifiers for village communication (escort, healing, tools, etc.) |
+| `src/main/java/com/smartvillager/needqueue/NeedTypes.java` | Defines all need request type identifiers for village communication (escort, healing, tools, trade, etc.) |
 | `src/main/java/com/smartvillager/needqueue/NeedRequest.java` | Immutable request record with id, type, priority, poster, itemData, and acceptance status |
 | `src/main/java/com/smartvillager/needqueue/VillageNeedQueue.java` | Per-village queue with open and in-progress request lists, supporting posting/acceptance/completion/expiry |
 | `src/main/java/com/smartvillager/needqueue/NeedQueue.java` | System-level stateless logic syncing LibrarianCoordinator shortages to queue posts and expiring stale requests |
@@ -669,35 +650,31 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/command/DefenseCommands.java` | `/sv threat` trigger/clear and `/sv golem` list/spawn — manual defense state control |
 | `src/main/java/com/smartvillager/command/EconomyCommands.java` | `/sv prosperity` add/set and `/sv build` list/clear — prosperity score and build queue control |
 | `DEV_COMMANDS.md` | Player-facing reference for all `/sv` in-game test commands with syntax, descriptions, and common testing workflows |
-| `src/main/java/com/smartvillager/defense/GuardDefenseSystem.java` | Drives guard combat, threat detection, chest-guardian assignment during THREAT_ALERT, and civilian shelter orders |
-| `src/main/java/com/smartvillager/defense/PatrolSystem.java` | Generates patrol waypoints around the Bell anchor including mandatory stockpile chest cluster stop for Guards |
+| `src/main/java/com/smartvillager/defense/WeaponsmithDefenseSystem.java` | Drives Weaponsmith melee combat, threat detection, chest-guardian assignment during THREAT_ALERT, civilian shelter orders, and perimeter patrol with mandatory stockpile waypoint |
+| `src/main/java/com/smartvillager/defense/FletcherRangedDefenseBehavior.java` | Drives Fletcher stationary ranged fire during THREAT_ALERT; returns to crafting after threat resolves |
+| `src/main/java/com/smartvillager/defense/ArmorerEquipmentLogisticsBehavior.java` | Drives Armorer equipment monitoring, delivery to defenders, and emergency rearm during and after fights; handles Iron Golem commission trigger |
+| `src/main/java/com/smartvillager/defense/EscortSystem.java` | Assigns Weaponsmiths to NEED_ESCORT requests; tracks escort state (accept→accompany→return); skips escorting Weaponsmiths from patrol |
 | `src/main/java/com/smartvillager/defense/IronGolemSystem.java` | Commissions, spawns, and stations village-owned iron golems at the storehouse; tracks golem UUIDs on SmartVillage; handles death detection and replacement cooldown |
-| `src/main/java/com/smartvillager/daynight/DayNightCycle.java` | Utility for night detection and guard night-rotation logic; gates resource gathering to daytime only |
+| `src/main/java/com/smartvillager/daynight/DayNightCycle.java` | Utility for night detection and Weaponsmith night-rotation logic; gates resource gathering to daytime only |
 | `src/main/java/com/smartvillager/cleric/ClericHealingSystem.java` | Drives Cleric healing of injured villagers and players, potion brewing subrole, and abstract-sim healing from stockpile supply |
 | `src/main/java/com/smartvillager/food/FarmerSystem.java` | Drives Farmer crop harvesting (bread, carrot, potato, wheat) and wood-gathering subrole (logs, saplings) when food supply is adequate |
 | `src/main/java/com/smartvillager/food/FishermanSystem.java` | Drives Fisherman fish production (cooked_cod, cooked_salmon) and water-edge resource subrole (sand, gravel, flint, clay) |
 | `src/main/java/com/smartvillager/food/ShepherdSystem.java` | Drives Shepherd animal tending (wool, raw meat, feathers, leather, eggs) with doubled meat output when NEED_FOOD_BOOST is active |
 | `src/main/java/com/smartvillager/food/ButcherSystem.java` | Converts raw meat from stockpile to cooked meat; posts NEED_FOOD_BOOST to NeedQueue when cooked meat supply drops critically low |
-| `src/main/java/com/smartvillager/food/LeatherworkerSystem.java` | Converts leather from stockpile into leather armor pieces (helmet, chestplate, leggings, boots) for early Guard equipment |
-| `src/main/java/com/smartvillager/supply/WeaponsmithSystem.java` | Crafts iron swords and axes for Guards from stockpile ingots; smelts raw ore as subrole when ingots are below threshold; Weaponsmith has smelt priority over Armorer |
-| `src/main/java/com/smartvillager/supply/ArmorerSystem.java` | Crafts iron armor pieces (helmet, chestplate, leggings, boots) for Guards; smelt subrole activates only when ore is abundant so Weaponsmith has first access to scarce ore |
+| `src/main/java/com/smartvillager/food/LeatherworkerSystem.java` | Converts leather from stockpile into leather armor pieces (helmet, chestplate, leggings, boots) for early Weaponsmith equipment |
+| `src/main/java/com/smartvillager/supply/WeaponsmithSystem.java` | Crafts iron swords and axes from stockpile ingots; equips self first, deposits surplus; smelts raw ore as subrole when ingots are below threshold |
+| `src/main/java/com/smartvillager/supply/ArmorerSystem.java` | Crafts iron armor pieces for defenders; smelt subrole activates only when ore is abundant so Weaponsmith has first access to scarce ore; commissions Iron Golem when triggered by Librarian |
 | `src/main/java/com/smartvillager/supply/FletcherSystem.java` | Crafts arrows from oak logs, feathers, and flint up to a 64-arrow buffer; posts NEED_MATERIALS to NeedQueue when feather or flint supply drops below threshold |
-| `src/main/java/com/smartvillager/build/BuildTaskType.java` | Enum of build task types (PLACE_CHEST) describing what action fires on task completion |
+| `src/main/java/com/smartvillager/build/BuildTaskType.java` | Enum of build task types (PLACE_CHEST, PLACE_WORKSTATION) describing what action fires on task completion |
 | `src/main/java/com/smartvillager/build/BuildTask.java` | Immutable record for a single queued build task: type, target BlockPos, progress required/done; CODEC-serialized |
 | `src/main/java/com/smartvillager/build/BuildQueue.java` | Ordered list of BuildTasks per village; head-first processing; CODEC-serialized through SmartVillage |
-| `src/main/java/com/smartvillager/build/MasonSystem.java` | Drives Mason quarrying subrole (cobblestone, gravel, sand), build queue execution, and storehouse chest expansion; posts NEED_TOOLS when no pickaxe available |
-| `src/main/java/com/smartvillager/defense/EscortSystem.java` | Assigns Guards to NEED_ESCORT requests; tracks escort state (accept→accompany→return); skips escorting Guards from patrol in PatrolSystem |
-| `src/main/java/com/smartvillager/cartographer/CartographerSystem.java` | Drives Cartographer survey waypoints and scouting subrole; queues PLACE_CHEST build tasks when prosperity ≥ 150; records explored territory in VillageMemory |
-| `src/main/java/com/smartvillager/merchant/MerchantSystem.java` | Drives Merchant approach-player behavior and dynamic shop UI; builds offers from live stockpile counts with supply-based pricing; intercepts player interaction to open trade screen |
-| `src/main/java/com/smartvillager/village/ProsperitySystem.java` | Event-driven prosperity adjustments: villager death (−30), threat defeated (+20), structure built (+15), trade completed (+10), player donation (+5), villager starving (−5) |
-| `src/main/java/com/smartvillager/personality/PersonalityTrait.java` | Enum (BRAVE/CAUTIOUS/GREEDY/GENEROUS) with codec and behavior multiplier methods for escort request chance, queue response, and merchant pricing |
+| `src/main/java/com/smartvillager/build/MasonSystem.java` | Drives Mason quarrying subrole (cobblestone, gravel, sand), build queue execution, and storehouse/workstation expansion; posts NEED_TOOLS when no pickaxe available |
+| `src/main/java/com/smartvillager/cartographer/CartographerSystem.java` | Drives Cartographer survey waypoints and scouting subrole; queues PLACE_CHEST and PLACE_WORKSTATION build tasks when prosperity ≥ 150; records explored territory and loot structure locations in VillageMemory |
+| `src/main/java/com/smartvillager/personality/PersonalityTrait.java` | Enum (BRAVE/CAUTIOUS/GREEDY/GENEROUS) with codec and behavior multiplier methods for profession weight, escort request chance, queue response, and trade pricing |
 | `src/main/java/com/smartvillager/personality/VillagerPersonality.java` | Per-villager attachment wrapping PersonalityTrait; random assignment on creation; stored via ModAttachments.VILLAGER_PERSONALITY |
-| `src/main/java/com/smartvillager/reputation/PlayerReputation.java` | Player reputation tier thresholds (HOSTILE/NEUTRAL/FRIENDLY/HONORED) and price multiplier lookup used by MerchantSystem |
+| `src/main/java/com/smartvillager/reputation/PlayerReputation.java` | Player reputation tier thresholds (HOSTILE/NEUTRAL/FRIENDLY/HONORED) and price multiplier lookup used by VillagerTradeEvaluator |
 | `src/main/java/com/smartvillager/memory/ThreatRecord.java` | Immutable record (pos, gameTick, cleared) with CODEC; tracks a single threat location in VillageMemory |
 | `src/main/java/com/smartvillager/memory/VillageMemory.java` | Persistent village memory: records threat locations (96k-tick expiry) and villager death sites; isFlagged() used by MasonSystem and CartographerSystem |
-| `src/main/java/com/smartvillager/client/ClientModEvents.java` | Client-only MOD bus event registration; wires SmartVillagerRenderer for EntityType.VILLAGER; called from SmartVillager constructor guarded by dist check |
-| `src/main/java/com/smartvillager/client/SmartVillagerRenderer.java` | Extends VillagerRenderer to add MerchantColorLayer; all vanilla layers are preserved |
-| `src/main/java/com/smartvillager/client/MerchantColorLayer.java` | Render layer that draws the Wandering Trader texture with a biome-derived DyeColor tint when the villager's profession is smartvillager:merchant |
 | `src/main/java/com/smartvillager/registration/ModCreativeTabs.java` | Registers the SmartVillager creative mode tab; currently empty (emerald icon placeholder); add items here as custom blocks/items are introduced |
 
 ---
@@ -707,12 +684,12 @@ Build in this order to avoid dependency issues:
 Where to register or store new things:
 
 - **New profession behavior** — register a handler in `ProfessionBehaviorRegistry` via `ProfessionBehaviorRegistry.register(professionKey, handler)` during `FMLCommonSetupEvent`
-- **New profession** — declare in `ModProfessions` and register its POI association; add to `VillageDetector.chooseProfession()` if it should be auto-assigned at birth
 - **New need type** — add a constant to `NeedTypes`; post via `NeedQueue.postRequest()` and check via `VillageNeedQueue.hasOpenRequest()`
 - **New attachment** — declare in `ModAttachments` and register on `ATTACHMENT_TYPES`; access via `entity.getData(ModAttachments.YOUR_ATTACHMENT)`
 - **New game event handler** — add a `@SubscribeEvent` method to an `@EventBusSubscriber` class; wire mod-bus events in `SmartVillager` constructor
 - **New per-villager data** — store as an attachment in `ModAttachments`; for village-scoped data, store on `SmartVillage` and serialize through `SmartVillage.CODEC`
 - **New stockpile chest** — register via `village.getChestTracker().register(blockPos)`; the tracker persists positions through `SmartVillage.CODEC`; never write to or read from a chest that isn't in the tracker
+- **New workstation** — register via `village.getWorkstationTracker().register(blockPos, type)`; villagers must path to the registered position to use it; never grant crafted/smelted items without the villager being at a registered workstation
 - **New village-owned entity** — add its UUID list to `SmartVillage`; listen for entity remove events to detect death; never use vanilla natural-spawn mechanics for intentional village entities
 
 ---
@@ -720,7 +697,7 @@ Where to register or store new things:
 ## Rules
 
 - **Check Key Files first** — before exploring the codebase for an unknown file or class, scan the Key Files table above; the responsible file is almost always listed there
-- **Use existing registries** — never bypass `ModProfessions`, `ModAttachments`, `ProfessionBehaviorRegistry`, or `VillageRegistry`; always extend them instead of creating parallel structures
+- **Use existing registries** — never bypass `ModAttachments`, `ProfessionBehaviorRegistry`, or `VillageRegistry`; always extend them instead of creating parallel structures
 - **Finish the task first** — complete the requested change before suggesting refactors, improvements, or follow-up work
 - **Update Key Files before finishing** — every new Java file must have a row added to the Key Files table in the same task that created it
 - **Update DEV_COMMANDS.md for every new `/sv` command** — whenever a command is added to or removed from `DebugCommands.java`, update `DEV_COMMANDS.md` in the same task: add a new entry under the correct section with the exact syntax, a one-line description, and any relevant testing notes; also add it to the Common Testing Workflows section if it enables a meaningful test scenario
@@ -736,7 +713,9 @@ Where to register or store new things:
 | Minecraft version | 26.1.2 |
 | NeoForge version | 26.1.2.44-beta |
 
-**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle, cleric healing, iron golem defense, food chain (farmer, fisherman, shepherd, butcher, leatherworker), defense supply (weaponsmith, armorer, fletcher), mason build (quarrying subrole, build queue, storehouse chest expansion)
+**Completed systems (pending rework per roadmap):** hunger, health, needqueue, village registry, guard defense (→ rework to Weaponsmith/Fletcher/Armorer), patrol (→ rework), day/night cycle, cleric healing, iron golem defense, food chain (farmer, fisherman, shepherd, butcher, leatherworker), defense supply (weaponsmith, armorer, fletcher), mason build (quarrying subrole, build queue, storehouse chest expansion)
+
+**Pending (not yet implemented):** WorkstationTracker, VillagerTradeEvaluator, emerald economy, per-villager dynamic trading, weighted profession assignment, shared subrole pool, Weaponsmith patrol rework, Fletcher ranged defense behavior, Armorer equipment logistics behavior
 
 **Branch pattern:** `feature/description` and `bugfix/description`
 
