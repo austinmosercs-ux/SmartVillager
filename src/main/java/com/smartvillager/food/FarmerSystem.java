@@ -137,7 +137,7 @@ public final class FarmerSystem {
     // Shared helpers (package-private — used by other food systems)
     // -------------------------------------------------------------------------
 
-    static List<Villager> findVillagers(ServerLevel level, SmartVillage village, Identifier prof) {
+    public static List<Villager> findVillagers(ServerLevel level, SmartVillage village, Identifier prof) {
         List<Villager> result = new ArrayList<>();
         for (Map.Entry<UUID, Identifier> e : village.getRoster().entrySet()) {
             if (!prof.equals(e.getValue())) continue;

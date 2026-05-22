@@ -659,6 +659,9 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/food/ShepherdSystem.java` | Drives Shepherd animal tending (wool, raw meat, feathers, leather, eggs) with doubled meat output when NEED_FOOD_BOOST is active |
 | `src/main/java/com/smartvillager/food/ButcherSystem.java` | Converts raw meat from stockpile to cooked meat; posts NEED_FOOD_BOOST to NeedQueue when cooked meat supply drops critically low |
 | `src/main/java/com/smartvillager/food/LeatherworkerSystem.java` | Converts leather from stockpile into leather armor pieces (helmet, chestplate, leggings, boots) for early Guard equipment |
+| `src/main/java/com/smartvillager/supply/WeaponsmithSystem.java` | Crafts iron swords and axes for Guards from stockpile ingots; smelts raw ore as subrole when ingots are below threshold; Weaponsmith has smelt priority over Armorer |
+| `src/main/java/com/smartvillager/supply/ArmorerSystem.java` | Crafts iron armor pieces (helmet, chestplate, leggings, boots) for Guards; smelt subrole activates only when ore is abundant so Weaponsmith has first access to scarce ore |
+| `src/main/java/com/smartvillager/supply/FletcherSystem.java` | Crafts arrows from oak logs, feathers, and flint up to a 64-arrow buffer; posts NEED_MATERIALS to NeedQueue when feather or flint supply drops below threshold |
 
 ---
 
@@ -694,7 +697,7 @@ Where to register or store new things:
 | Minecraft version | 26.1.2 |
 | NeoForge version | 26.1.2.44-beta |
 
-**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle, cleric healing, iron golem defense
+**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle, cleric healing, iron golem defense, food chain (farmer, fisherman, shepherd, butcher, leatherworker), defense supply (weaponsmith, armorer, fletcher)
 
 **Branch pattern:** `feature/description` and `bugfix/description`
 

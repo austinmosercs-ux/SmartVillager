@@ -11,6 +11,9 @@ import com.smartvillager.food.FarmerSystem;
 import com.smartvillager.food.FishermanSystem;
 import com.smartvillager.food.LeatherworkerSystem;
 import com.smartvillager.food.ShepherdSystem;
+import com.smartvillager.supply.ArmorerSystem;
+import com.smartvillager.supply.FletcherSystem;
+import com.smartvillager.supply.WeaponsmithSystem;
 import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
 import com.smartvillager.needqueue.NeedQueue;
@@ -62,6 +65,9 @@ public final class VillageDetector {
     private static final Identifier PROF_BUTCHER       = Identifier.withDefaultNamespace("butcher");
     private static final Identifier PROF_LEATHERWORKER = Identifier.withDefaultNamespace("leatherworker");
     private static final Identifier PROF_TOOLSMITH     = Identifier.withDefaultNamespace("toolsmith");
+    private static final Identifier PROF_WEAPONSMITH   = Identifier.withDefaultNamespace("weaponsmith");
+    private static final Identifier PROF_ARMORER       = Identifier.withDefaultNamespace("armorer");
+    private static final Identifier PROF_FLETCHER      = Identifier.withDefaultNamespace("fletcher");
     private VillageDetector() {}
 
     // -------------------------------------------------------------------------
@@ -181,6 +187,9 @@ public final class VillageDetector {
         if (village.countProfession(PROF_BUTCHER)        == 0) return PROF_BUTCHER;
         if (village.countProfession(PROF_LEATHERWORKER)  == 0) return PROF_LEATHERWORKER;
         if (village.countProfession(PROF_TOOLSMITH)      == 0) return PROF_TOOLSMITH;
+        if (village.countProfession(PROF_WEAPONSMITH)   == 0) return PROF_WEAPONSMITH;
+        if (village.countProfession(PROF_ARMORER)       == 0) return PROF_ARMORER;
+        if (village.countProfession(PROF_FLETCHER)      == 0) return PROF_FLETCHER;
         return PROF_FARMER;
     }
 
@@ -233,6 +242,9 @@ public final class VillageDetector {
             ShepherdSystem.tick(level, village, level.getGameTime());
             ButcherSystem.tick(level, village, level.getGameTime());
             LeatherworkerSystem.tick(level, village, level.getGameTime());
+            WeaponsmithSystem.tick(level, village, level.getGameTime());
+            ArmorerSystem.tick(level, village, level.getGameTime());
+            FletcherSystem.tick(level, village, level.getGameTime());
             ClericHealingSystem.tick(level, village, level.getGameTime());
             GuardDefenseSystem.tick(level, village, level.getGameTime());
             PatrolSystem.tick(level, village, level.getGameTime());
@@ -269,6 +281,9 @@ public final class VillageDetector {
         ShepherdSystem.abstractTick(village);
         ButcherSystem.abstractTick(village);
         LeatherworkerSystem.abstractTick(village);
+        WeaponsmithSystem.abstractTick(village);
+        ArmorerSystem.abstractTick(village);
+        FletcherSystem.abstractTick(village);
         village.addProsperity(5);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);
