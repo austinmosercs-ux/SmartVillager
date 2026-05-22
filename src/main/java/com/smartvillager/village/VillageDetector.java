@@ -19,6 +19,7 @@ import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
 import com.smartvillager.needqueue.NeedQueue;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -28,11 +29,14 @@ import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+
+import javax.annotation.Nullable;
 
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +59,20 @@ public final class VillageDetector {
     private static final int FULL_SIM_RADIUS = 512;
     /** How many ticks between abstract batch updates (~60 seconds). */
     private static final long ABSTRACT_UPDATE_INTERVAL = 1200L;
+
+    // --- Starting inventory seeds ---
+    private static final Identifier ITEM_BREAD = Identifier.withDefaultNamespace("bread");
+
+    // --- Prosperity thresholds for role unlocking ---
+    // Tier 0 (0+):   Librarian, Farmer, Guard — always available; core survival
+    // Tier 1 (50+):  Cleric, Fisherman — healthcare and supplementary food
+    // Tier 2 (100+): Shepherd, Butcher — animal husbandry chain
+    // Tier 3 (150+): Leatherworker, Toolsmith — early manufacturing
+    // Tier 4 (200+): Weaponsmith, Armorer, Fletcher, Mason — full defense and expansion
+    private static final int TIER_1_THRESHOLD = 50;
+    private static final int TIER_2_THRESHOLD = 100;
+    private static final int TIER_3_THRESHOLD = 150;
+    private static final int TIER_4_THRESHOLD = 200;
 
     // --- Profession Identifiers ---
     private static final Identifier PROF_LIBRARIAN     = Identifier.withDefaultNamespace("librarian");
@@ -148,9 +166,65 @@ public final class VillageDetector {
         SmartVillage village = SmartVillage.create(anchor, typeKey, level.getRandom(), level.getGameTime());
         registry.register(village);
 
+        initializeStorehouse(level, village);
+
         LOGGER.info("[SmartVillager] Registered new village at {} (type={}, color={})",
             anchor, typeKey.identifier(), village.getMerchantColor());
         return village;
+    }
+
+    /**
+     * Places a starting storehouse chest near the Bell anchor and seeds the
+     * village with a minimal starting inventory. The chest position is
+     * registered with the StockpileChestTracker so all subsequent deposits and
+     * withdrawals route through it once full simulation activates.
+     *
+     * If no valid position is found (unusual terrain), items are kept in the
+     * abstract snapshot only and the chest is placed later by Mason expansion.
+     */
+    private static void initializeStorehouse(ServerLevel level, SmartVillage village) {
+        seedStartingInventory(village);
+
+        BlockPos chestPos = findStorehousePos(level, village.getAnchor());
+        if (chestPos == null) {
+            LOGGER.warn("[SmartVillager] Could not find valid storehouse position near {} — starting with snapshot-only stockpile",
+                village.getAnchor());
+            return;
+        }
+
+        level.setBlock(chestPos, Blocks.CHEST.defaultBlockState(), 3);
+        village.getChestTracker().register(chestPos);
+
+        LOGGER.info("[SmartVillager] Placed initial storehouse chest at {} for village at {}",
+            chestPos, village.getAnchor());
+    }
+
+    /** Seeds the village stockpile with minimal starting resources per design spec. */
+    private static void seedStartingInventory(SmartVillage village) {
+        village.getStockpile().deposit(ITEM_BREAD, 8);
+        village.getStockpile().deposit(ClericHealingSystem.HEALING_SUPPLY, 4);
+    }
+
+    /**
+     * Searches cardinal directions at increasing distances from the anchor for
+     * an air block with a sturdy floor — a valid chest placement site.
+     */
+    @Nullable
+    private static BlockPos findStorehousePos(ServerLevel level, BlockPos anchor) {
+        for (int dist = 4; dist <= 10; dist++) {
+            int[][] cardinals = {{dist, 0}, {-dist, 0}, {0, dist}, {0, -dist}};
+            for (int[] dir : cardinals) {
+                for (int dy = -3; dy <= 3; dy++) {
+                    BlockPos candidate = anchor.offset(dir[0], dy, dir[1]);
+                    if (!level.getBlockState(candidate).isAir()) continue;
+                    BlockPos floor = candidate.below();
+                    if (level.getBlockState(floor).isFaceSturdy(level, floor, Direction.UP)) {
+                        return candidate;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -180,20 +254,50 @@ public final class VillageDetector {
     }
 
     private static Identifier chooseProfession(SmartVillage village) {
-        if (village.countProfession(PROF_LIBRARIAN)     == 0) return PROF_LIBRARIAN;
-        if (village.countProfession(PROF_FARMER)         == 0) return PROF_FARMER;
-        if (village.countProfession(PROF_GUARD)          == 0) return PROF_GUARD;
-        if (village.countProfession(PROF_CLERIC)         == 0) return PROF_CLERIC;
-        if (village.countProfession(PROF_FISHERMAN)      == 0) return PROF_FISHERMAN;
-        if (village.countProfession(PROF_SHEPHERD)       == 0) return PROF_SHEPHERD;
-        if (village.countProfession(PROF_BUTCHER)        == 0) return PROF_BUTCHER;
-        if (village.countProfession(PROF_LEATHERWORKER)  == 0) return PROF_LEATHERWORKER;
-        if (village.countProfession(PROF_TOOLSMITH)      == 0) return PROF_TOOLSMITH;
-        if (village.countProfession(PROF_WEAPONSMITH)   == 0) return PROF_WEAPONSMITH;
-        if (village.countProfession(PROF_ARMORER)       == 0) return PROF_ARMORER;
-        if (village.countProfession(PROF_FLETCHER)      == 0) return PROF_FLETCHER;
-        if (village.countProfession(PROF_MASON)         == 0) return PROF_MASON;
+        int prosperity = village.getProsperityScore();
+
+        // Tier 0 — always available; every village needs these to function at all.
+        Identifier missing = firstMissing(village, PROF_LIBRARIAN, PROF_FARMER, PROF_GUARD);
+        if (missing != null) return missing;
+
+        // Tier 1 — healthcare and supplementary food (prosperity 50+).
+        if (prosperity >= TIER_1_THRESHOLD) {
+            missing = firstMissing(village, PROF_CLERIC, PROF_FISHERMAN);
+            if (missing != null) return missing;
+        }
+
+        // Tier 2 — animal husbandry chain (prosperity 100+).
+        if (prosperity >= TIER_2_THRESHOLD) {
+            missing = firstMissing(village, PROF_SHEPHERD, PROF_BUTCHER);
+            if (missing != null) return missing;
+        }
+
+        // Tier 3 — early manufacturing (prosperity 150+).
+        if (prosperity >= TIER_3_THRESHOLD) {
+            missing = firstMissing(village, PROF_LEATHERWORKER, PROF_TOOLSMITH);
+            if (missing != null) return missing;
+        }
+
+        // Tier 4 — full defense and expansion chain (prosperity 200+).
+        if (prosperity >= TIER_4_THRESHOLD) {
+            missing = firstMissing(village, PROF_WEAPONSMITH, PROF_ARMORER, PROF_FLETCHER, PROF_MASON);
+            if (missing != null) return missing;
+        }
+
+        // Default: additional Farmer. Excess villagers build food surplus that
+        // drives prosperity growth, which eventually unlocks the next role tier.
+        // A role lost while prosperity is below its tier threshold cannot be
+        // replaced until prosperity recovers — the loss has lasting consequences.
         return PROF_FARMER;
+    }
+
+    /** Returns the first profession in the list that has zero members in the village roster. */
+    @Nullable
+    private static Identifier firstMissing(SmartVillage village, Identifier... professions) {
+        for (Identifier prof : professions) {
+            if (village.countProfession(prof) == 0) return prof;
+        }
+        return null;
     }
 
     // -------------------------------------------------------------------------

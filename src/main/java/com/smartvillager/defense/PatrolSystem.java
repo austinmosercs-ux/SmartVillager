@@ -3,6 +3,7 @@ package com.smartvillager.defense;
 import com.smartvillager.SmartVillager;
 import com.smartvillager.daynight.DayNightCycle;
 import com.smartvillager.village.SmartVillage;
+import com.smartvillager.village.StockpileChestTracker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -64,7 +65,7 @@ public final class PatrolSystem {
             .count();
 
         boolean night = DayNightCycle.isNight(level);
-        List<BlockPos> waypoints = generateWaypoints(village.getAnchor());
+        List<BlockPos> waypoints = generateWaypoints(village.getAnchor(), village.getChestTracker());
 
         village.getRoster().entrySet().stream()
             .filter(e -> PROF_GUARD.equals(e.getValue()))
@@ -103,16 +104,24 @@ public final class PatrolSystem {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns 8 patrol waypoints distributed at PATROL_RADIUS blocks around the anchor.
-     * Points are at the anchor's Y level; the pathfinder adjusts for terrain.
+     * Returns patrol waypoints around the anchor plus a mandatory stop at the
+     * storehouse chest cluster. Guards must pass through the stockpile area on
+     * every loop — it is the highest-value target in the village.
+     *
+     * The 8 perimeter points are generated first; the chest position (if any)
+     * is appended so Guards visit it once per circuit before wrapping back to
+     * the start.
      */
-    static List<BlockPos> generateWaypoints(BlockPos anchor) {
-        List<BlockPos> waypoints = new ArrayList<>(8);
+    static List<BlockPos> generateWaypoints(BlockPos anchor, StockpileChestTracker chestTracker) {
+        List<BlockPos> waypoints = new ArrayList<>(9);
         for (int i = 0; i < 8; i++) {
             double angle = i * (Math.PI / 4.0);
             int dx = (int) Math.round(PATROL_RADIUS * Math.cos(angle));
             int dz = (int) Math.round(PATROL_RADIUS * Math.sin(angle));
             waypoints.add(anchor.offset(dx, 0, dz));
+        }
+        if (!chestTracker.isEmpty()) {
+            waypoints.add(chestTracker.positions().get(0));
         }
         return waypoints;
     }

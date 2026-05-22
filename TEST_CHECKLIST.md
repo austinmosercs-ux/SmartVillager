@@ -30,6 +30,55 @@ Legend: `[ ]` = untested · `[x]` = passing · `[~]` = partial / flaky · `[!]` 
 
 ---
 
+## Phase 1b — Storehouse Initialization
+
+**Goal:** Confirm a physical storehouse chest spawns near the Bell on village registration and the starting inventory is seeded correctly.
+
+**Setup:** Use a fresh world (or delete the village save data) so village registration fires cleanly. Stand within 64 blocks of the Bell.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Load into a world with a vanilla village | A chest block appears within ~10 blocks of the Bell |
+| 2 | Run `/sv stockpile` | Shows `bread: 8` and `smartvillager:healing_supply: 4` from the seed |
+| 3 | Open the chest in the world | Bread is physically inside (reconciled from snapshot when full sim activates) |
+| 4 | Run `/sv status` | Chest tracker lists at least one registered position |
+| 5 | Watch the Guard patrol route | Guard walks to the storehouse chest area on every patrol loop |
+| 6 | Run `/sv threat trigger` | One Guard holds at the chest; others engage |
+
+- [ ] A chest is placed near the Bell on village registration
+- [ ] Starting inventory seeded: `bread: 8`, `healing_supply: 4`
+- [ ] Chest is registered in the StockpileChestTracker (`/sv stockpile` reads it)
+- [ ] Guard patrol visits the storehouse chest once per loop
+- [ ] Chest guardian holds at the chest during THREAT_ALERT
+
+---
+
+## Phase 1c — Prosperity-Gated Role Assignment
+
+**Goal:** Confirm that advanced roles only unlock once the village has earned the required prosperity, regardless of how many vanilla villagers are present.
+
+**Setup:** Use a fresh world. Run `/sv prosperity set 0` immediately after detection to lock the village at Tier 0.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Load into a village with 6+ existing villagers, set prosperity to 0 | `/sv roster` — only Librarian, Farmer, Guard assigned; extras are Farmer |
+| 2 | Confirm no Cleric, Fisherman, or higher roles exist at prosperity 0 | `/sv roster` shows only Tier 0 roles and extra Farmers |
+| 3 | Run `/sv prosperity set 50` | Wait for next villager birth or `/sv roster` on next join event — Cleric or Fisherman now eligible |
+| 4 | Run `/sv prosperity set 100` | Shepherd and Butcher become eligible at next birth |
+| 5 | Run `/sv prosperity set 150` | Leatherworker and Toolsmith become eligible |
+| 6 | Run `/sv prosperity set 200` | Weaponsmith, Armorer, Fletcher, Mason all become eligible |
+| 7 | Kill the Toolsmith while prosperity is 140 | At next birth, a Farmer is assigned (not a Toolsmith — threshold not met) |
+| 8 | Run `/sv prosperity set 150`, trigger another birth | Toolsmith role is now restored |
+
+- [ ] At prosperity 0: only Librarian, Farmer, Guard assigned; extras become Farmer
+- [ ] Cleric and Fisherman unlock at prosperity ≥ 50
+- [ ] Shepherd and Butcher unlock at prosperity ≥ 100
+- [ ] Leatherworker and Toolsmith unlock at prosperity ≥ 150
+- [ ] Weaponsmith, Armorer, Fletcher, Mason unlock at prosperity ≥ 200
+- [ ] A role lost while prosperity is below its tier threshold is replaced with Farmer, not restored
+
+---
+
 ## Phase 2 — Stockpile Commands
 
 **Goal:** Confirm the chest network is registered and the stockpile commands read and write real chests.

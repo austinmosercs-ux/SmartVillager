@@ -479,9 +479,21 @@ Drives:
 
 ### 9. Population & Role Control
 - Villages start small and grow only when they can support new members (food + beds + available job)
-- New villager class is assigned based on what the village needs most at time of birth
-- If the only critical role villager dies, the village flags it and prioritizes replacing it at next birth
+- New villager class is assigned based on what the village needs most at time of birth AND the village's current prosperity tier
+- Advanced roles are gated behind prosperity thresholds — a freshly detected village cannot immediately have a full economy regardless of how many vanilla villagers are present
+- Villagers beyond the starting trio that join before prosperity thresholds are met are assigned as Farmers (more food production, but no advanced output)
+- If the only critical role villager dies, the village prioritizes replacing it at next birth — but only if prosperity still meets that role's tier threshold; if prosperity has dropped below threshold, the replacement becomes a Farmer instead
 - Death consequences ripple through the economy — losing a Toolsmith slows ore and tool supply, losing a Guard increases threat frequency, losing the only Farmer starts a starvation cascade, losing the Mason halts village expansion
+
+**Role unlock tiers (implemented in `VillageDetector.chooseProfession()`):**
+
+| Tier | Prosperity | Roles unlocked |
+|---|---|---|
+| 0 | 0+ | Librarian, Farmer, Guard |
+| 1 | 50+ | Cleric, Fisherman |
+| 2 | 100+ | Shepherd, Butcher |
+| 3 | 150+ | Leatherworker, Toolsmith |
+| 4 | 200+ | Weaponsmith, Armorer, Fletcher, Mason |
 
 ### 10. Day/Night Cycle Behavior
 - Villagers go home and sleep at night — enforced, not optional
