@@ -6,6 +6,11 @@ import com.smartvillager.cleric.ClericHealingSystem;
 import com.smartvillager.defense.GuardDefenseSystem;
 import com.smartvillager.defense.IronGolemSystem;
 import com.smartvillager.defense.PatrolSystem;
+import com.smartvillager.food.ButcherSystem;
+import com.smartvillager.food.FarmerSystem;
+import com.smartvillager.food.FishermanSystem;
+import com.smartvillager.food.LeatherworkerSystem;
+import com.smartvillager.food.ShepherdSystem;
 import com.smartvillager.health.HealthSystem;
 import com.smartvillager.hunger.HungerSystem;
 import com.smartvillager.needqueue.NeedQueue;
@@ -48,11 +53,15 @@ public final class VillageDetector {
     private static final long ABSTRACT_UPDATE_INTERVAL = 1200L;
 
     // --- Profession Identifiers ---
-    private static final Identifier PROF_LIBRARIAN  = Identifier.withDefaultNamespace("librarian");
-    private static final Identifier PROF_FARMER     = Identifier.withDefaultNamespace("farmer");
-    private static final Identifier PROF_GUARD      = Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "guard");
-    private static final Identifier PROF_CLERIC     = Identifier.withDefaultNamespace("cleric");
-    private static final Identifier PROF_TOOLSMITH  = Identifier.withDefaultNamespace("toolsmith");
+    private static final Identifier PROF_LIBRARIAN     = Identifier.withDefaultNamespace("librarian");
+    private static final Identifier PROF_FARMER        = Identifier.withDefaultNamespace("farmer");
+    private static final Identifier PROF_GUARD         = Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "guard");
+    private static final Identifier PROF_CLERIC        = Identifier.withDefaultNamespace("cleric");
+    private static final Identifier PROF_FISHERMAN     = Identifier.withDefaultNamespace("fisherman");
+    private static final Identifier PROF_SHEPHERD      = Identifier.withDefaultNamespace("shepherd");
+    private static final Identifier PROF_BUTCHER       = Identifier.withDefaultNamespace("butcher");
+    private static final Identifier PROF_LEATHERWORKER = Identifier.withDefaultNamespace("leatherworker");
+    private static final Identifier PROF_TOOLSMITH     = Identifier.withDefaultNamespace("toolsmith");
     private VillageDetector() {}
 
     // -------------------------------------------------------------------------
@@ -163,11 +172,15 @@ public final class VillageDetector {
     }
 
     private static Identifier chooseProfession(SmartVillage village) {
-        if (village.countProfession(PROF_LIBRARIAN) == 0) return PROF_LIBRARIAN;
-        if (village.countProfession(PROF_FARMER)    == 0) return PROF_FARMER;
-        if (village.countProfession(PROF_GUARD)     == 0) return PROF_GUARD;
-        if (village.countProfession(PROF_CLERIC)    == 0) return PROF_CLERIC;
-        if (village.countProfession(PROF_TOOLSMITH) == 0) return PROF_TOOLSMITH;
+        if (village.countProfession(PROF_LIBRARIAN)     == 0) return PROF_LIBRARIAN;
+        if (village.countProfession(PROF_FARMER)         == 0) return PROF_FARMER;
+        if (village.countProfession(PROF_GUARD)          == 0) return PROF_GUARD;
+        if (village.countProfession(PROF_CLERIC)         == 0) return PROF_CLERIC;
+        if (village.countProfession(PROF_FISHERMAN)      == 0) return PROF_FISHERMAN;
+        if (village.countProfession(PROF_SHEPHERD)       == 0) return PROF_SHEPHERD;
+        if (village.countProfession(PROF_BUTCHER)        == 0) return PROF_BUTCHER;
+        if (village.countProfession(PROF_LEATHERWORKER)  == 0) return PROF_LEATHERWORKER;
+        if (village.countProfession(PROF_TOOLSMITH)      == 0) return PROF_TOOLSMITH;
         return PROF_FARMER;
     }
 
@@ -215,6 +228,11 @@ public final class VillageDetector {
         } else {
             HungerSystem.tick(level, village, PROXIMITY_CHECK_INTERVAL);
             HealthSystem.tick(level, village);
+            FarmerSystem.tick(level, village, level.getGameTime());
+            FishermanSystem.tick(level, village, level.getGameTime());
+            ShepherdSystem.tick(level, village, level.getGameTime());
+            ButcherSystem.tick(level, village, level.getGameTime());
+            LeatherworkerSystem.tick(level, village, level.getGameTime());
             ClericHealingSystem.tick(level, village, level.getGameTime());
             GuardDefenseSystem.tick(level, village, level.getGameTime());
             PatrolSystem.tick(level, village, level.getGameTime());
@@ -246,6 +264,11 @@ public final class VillageDetector {
         NeedQueue.abstractTick(village, currentTick);
         GuardDefenseSystem.abstractTick(village);
         IronGolemSystem.abstractTick(village);
+        FarmerSystem.abstractTick(village);
+        FishermanSystem.abstractTick(village);
+        ShepherdSystem.abstractTick(village);
+        ButcherSystem.abstractTick(village);
+        LeatherworkerSystem.abstractTick(village);
         village.addProsperity(5);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);

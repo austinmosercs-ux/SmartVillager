@@ -654,6 +654,11 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/defense/IronGolemSystem.java` | Commissions, spawns, and stations village-owned iron golems at the storehouse; tracks golem UUIDs on SmartVillage; handles death detection and replacement cooldown |
 | `src/main/java/com/smartvillager/daynight/DayNightCycle.java` | Utility for night detection and guard night-rotation logic; gates resource gathering to daytime only |
 | `src/main/java/com/smartvillager/cleric/ClericHealingSystem.java` | Drives Cleric healing of injured villagers and players, potion brewing subrole, and abstract-sim healing from stockpile supply |
+| `src/main/java/com/smartvillager/food/FarmerSystem.java` | Drives Farmer crop harvesting (bread, carrot, potato, wheat) and wood-gathering subrole (logs, saplings) when food supply is adequate |
+| `src/main/java/com/smartvillager/food/FishermanSystem.java` | Drives Fisherman fish production (cooked_cod, cooked_salmon) and water-edge resource subrole (sand, gravel, flint, clay) |
+| `src/main/java/com/smartvillager/food/ShepherdSystem.java` | Drives Shepherd animal tending (wool, raw meat, feathers, leather, eggs) with doubled meat output when NEED_FOOD_BOOST is active |
+| `src/main/java/com/smartvillager/food/ButcherSystem.java` | Converts raw meat from stockpile to cooked meat; posts NEED_FOOD_BOOST to NeedQueue when cooked meat supply drops critically low |
+| `src/main/java/com/smartvillager/food/LeatherworkerSystem.java` | Converts leather from stockpile into leather armor pieces (helmet, chestplate, leggings, boots) for early Guard equipment |
 
 ---
 
