@@ -42,9 +42,9 @@ These systems connect the Phase 2 behaviors into a functioning village network.
 
 | # | Branch | What it covers | Status |
 |---|---|---|---|
-| 15 | `feature/escort-system` | Guard responds to NEED_ESCORT from Toolsmith, Mason, Cartographer, and Fisherman; escort state machine (accept → accompany → protect → return to patrol) | |
-| 16 | `feature/cartographer-system` | Cartographer mapping primary role; scouting subrole; threat flagging to Guards; cave and ore data shared with Toolsmith; build site plans fed to Librarian and Mason; village memory updates | |
-| 17 | `feature/merchant-shop` | Merchant shop UI showing live village inventory only; dynamic pricing based on supply levels; Merchant supply monitor subrole posting NEED_RESTOCK to NeedQueue | |
+| 15 | `feature/escort-system` | Guard responds to NEED_ESCORT from Toolsmith, Mason, Cartographer, and Fisherman; escort state machine (accept → accompany → protect → return to patrol) | Done |
+| 16 | `feature/cartographer-system` | Cartographer mapping primary role; scouting subrole; threat flagging to Guards; cave and ore data shared with Toolsmith; build site plans fed to Librarian and Mason; village memory updates | Done |
+| 17 | `feature/merchant-shop` | Merchant shop UI showing live village inventory only; dynamic pricing based on supply levels; Merchant supply monitor subrole posting NEED_RESTOCK to NeedQueue | Done |
 
 ---
 
@@ -52,9 +52,9 @@ These systems connect the Phase 2 behaviors into a functioning village network.
 
 | # | Branch | What it covers | Status |
 |---|---|---|---|
-| 18 | `feature/prosperity-score` | Prosperity score tracking; population gating (new villagers require food + beds + available role); Librarian unlocking advanced recipes at thresholds | |
-| 19 | `feature/personality-reputation` | Villager personality traits (brave, cautious, greedy, generous); NeedQueue decision bias; inter-villager trust and reputation; player reputation score affecting Merchant prices and Guard behavior | |
-| 20 | `feature/village-memory` | Village tracks threat locations and villager death sites; Toolsmith and Mason avoid flagged areas until Guard clears them; Cartographer maintains and shares the memory map | |
+| 18 | `feature/prosperity-score` | Prosperity score tracking; population gating (new villagers require food + beds + available role); Librarian unlocking advanced recipes at thresholds | Done |
+| 19 | `feature/personality-reputation` | Villager personality traits (brave, cautious, greedy, generous); NeedQueue decision bias; inter-villager trust and reputation; player reputation score affecting Merchant prices and Guard behavior | Done |
+| 20 | `feature/village-memory` | Village tracks threat locations and villager death sites; Toolsmith and Mason avoid flagged areas until Guard clears them; Cartographer maintains and shares the memory map | Done |
 
 ---
 
@@ -62,9 +62,9 @@ These systems connect the Phase 2 behaviors into a functioning village network.
 
 | # | Branch | What it covers | Status |
 |---|---|---|---|
-| 21 | `feature/villager-nametags` | Each villager displays their profession as a nametag on hover — Guard, Merchant, Farmer, Mason, Librarian, etc. | |
-| 22 | `feature/villager-skins` | Custom skins for Guard and Merchant; Merchant uses the Wandering Trader model with biome-based robe colors assigned at village registration; Guard gets a unique skin; all vanilla professions keep their vanilla skins | |
-| 23 | `feature/creative-tab` | SmartVillager creative tab grouping all mod items in one place in the creative inventory | |
+| 21 | `feature/villager-nametags` | Each villager displays their profession as a nametag on hover — Guard, Merchant, Farmer, Mason, Librarian, etc. | Done |
+| 22 | `feature/villager-skins` | Custom skins for Guard and Merchant; Merchant uses the Wandering Trader model with biome-based robe colors assigned at village registration; Guard gets a unique skin; all vanilla professions keep their vanilla skins | Done |
+| 23 | `feature/creative-tab` | SmartVillager creative tab grouping all mod items in one place in the creative inventory | Done |
 
 ---
 

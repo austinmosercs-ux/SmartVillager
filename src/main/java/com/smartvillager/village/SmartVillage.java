@@ -3,6 +3,7 @@ package com.smartvillager.village;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.smartvillager.build.BuildQueue;
+import com.smartvillager.memory.VillageMemory;
 import com.smartvillager.needqueue.VillageNeedQueue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -49,6 +50,9 @@ public final class SmartVillage {
 
     private static final Codec<Map<UUID, Identifier>> ROSTER_CODEC =
         Codec.unboundedMap(UUIDUtil.STRING_CODEC, Identifier.CODEC);
+
+    private static final Codec<Map<UUID, Integer>> REPUTATION_CODEC =
+        Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.INT);
 
     public static final Codec<SmartVillage> CODEC = RecordCodecBuilder.create(i -> i.group(
         UUIDUtil.STRING_CODEC
@@ -97,7 +101,15 @@ public final class SmartVillage {
         BuildQueue.CODEC
             .optionalFieldOf("build_queue")
             .xmap(opt -> opt.orElseGet(BuildQueue::new), Optional::of)
-            .forGetter(SmartVillage::getBuildQueue)
+            .forGetter(SmartVillage::getBuildQueue),
+        REPUTATION_CODEC
+            .optionalFieldOf("player_reputations")
+            .xmap(opt -> opt.orElseGet(HashMap::new), Optional::of)
+            .forGetter(SmartVillage::getPlayerReputations),
+        VillageMemory.CODEC
+            .optionalFieldOf("village_memory")
+            .xmap(opt -> opt.orElseGet(VillageMemory::new), Optional::of)
+            .forGetter(SmartVillage::getVillageMemory)
     ).apply(i, SmartVillage::new));
 
     private final UUID id;
@@ -118,6 +130,10 @@ public final class SmartVillage {
     private int prosperityScore;
     // Persisted: ordered list of build tasks for Mason to execute.
     private final BuildQueue buildQueue;
+    // Persisted: per-player reputation score with this village.
+    private final Map<UUID, Integer> playerReputations;
+    // Persisted: threat locations and death sites recorded by Guards and Cartographer.
+    private final VillageMemory villageMemory;
 
     private SimulationMode mode = SimulationMode.ABSTRACT;
     private Set<Identifier> shortages = Collections.emptySet();
@@ -144,7 +160,8 @@ public final class SmartVillage {
                         long lastAbstractUpdate, VillageStockpile stockpile,
                         VillageNeedQueue needQueue, StockpileChestTracker chestTracker,
                         Set<UUID> golems, long golemReplacementCooldownTick, int prosperityScore,
-                        BuildQueue buildQueue) {
+                        BuildQueue buildQueue, Map<UUID, Integer> playerReputations,
+                        VillageMemory villageMemory) {
         this.id = id;
         this.anchor = anchor;
         this.villagerTypeKey = villagerTypeKey;
@@ -158,6 +175,8 @@ public final class SmartVillage {
         this.golemReplacementCooldownTick = golemReplacementCooldownTick;
         this.prosperityScore = prosperityScore;
         this.buildQueue = buildQueue;
+        this.playerReputations = new HashMap<>(playerReputations);
+        this.villageMemory = villageMemory;
     }
 
     public static SmartVillage create(BlockPos anchor, ResourceKey<VillagerType> typeKey,
@@ -175,7 +194,9 @@ public final class SmartVillage {
             new HashSet<>(),
             0L,
             0,
-            new BuildQueue()
+            new BuildQueue(),
+            new HashMap<>(),
+            new VillageMemory()
         );
     }
 
@@ -323,6 +344,26 @@ public final class SmartVillage {
 
     public void addProsperity(int amount) {
         prosperityScore += amount;
+    }
+
+    // --- village memory ---
+
+    public VillageMemory getVillageMemory() { return villageMemory; }
+
+    // --- player reputation ---
+
+    /** Returns the unmodifiable map of player UUIDs to their reputation scores. */
+    public Map<UUID, Integer> getPlayerReputations() {
+        return Collections.unmodifiableMap(playerReputations);
+    }
+
+    public int getReputation(UUID playerUUID) {
+        return playerReputations.getOrDefault(playerUUID, 0);
+    }
+
+    public void adjustReputation(UUID playerUUID, int delta) {
+        int current = playerReputations.getOrDefault(playerUUID, 0);
+        playerReputations.put(playerUUID, Math.clamp((long) current + delta, -200, 500));
     }
 
     // --- build queue ---

@@ -5,6 +5,7 @@ import com.smartvillager.SmartVillager;
 import com.smartvillager.needqueue.NeedPriority;
 import com.smartvillager.needqueue.NeedQueue;
 import com.smartvillager.needqueue.NeedTypes;
+import com.smartvillager.village.ProsperitySystem;
 import com.smartvillager.village.SmartVillage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -96,14 +97,14 @@ public final class GuardDefenseSystem {
 
         if (!threats.isEmpty()) {
             village.activateThreatAlert(gameTick);
+            threats.forEach(m -> village.getVillageMemory().recordThreat(m.blockPosition(), gameTick));
             engageGuards(level, guards, threats, gameTick);
             shelterCivilians(level, village, guards);
             LOGGER.debug("[SmartVillager] Village at {} — THREAT_ALERT active ({} guard(s), {} threat(s))",
                 village.getAnchor(), guards.size(), threats.size());
-        } else if (village.isThreatAlertActive()) {
-            if (gameTick - village.getLastThreatSeenTick() >= THREAT_CLEAR_COOLDOWN) {
-                clearAlert(village, guards, gameTick);
-            }
+        } else if (village.isThreatAlertActive()
+                && gameTick - village.getLastThreatSeenTick() >= THREAT_CLEAR_COOLDOWN) {
+            clearAlert(village, guards, gameTick);
         }
     }
 
@@ -111,7 +112,7 @@ public final class GuardDefenseSystem {
     // Abstract simulation entry point
     // -------------------------------------------------------------------------
 
-    public static void abstractTick(SmartVillage village) {
+    public static void abstractTick() {
         // No entities are loaded during abstract simulation; the threat alert state
         // is preserved as-is on SmartVillage. Threat resolution resumes when full
         // simulation restarts and Guards can actually engage.
@@ -170,8 +171,10 @@ public final class GuardDefenseSystem {
                 if (gameTick - lastAttack >= ATTACK_COOLDOWN_TICKS) {
                     target.hurtServer(level, level.damageSources().mobAttack(guard), GUARD_ATTACK_DAMAGE);
                     attackCooldowns.put(guard.getUUID(), gameTick);
-                    LOGGER.debug("[SmartVillager] Guard {} struck {} for {} damage",
-                        guard.getUUID(), target.getType().toShortString(), GUARD_ATTACK_DAMAGE);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("[SmartVillager] Guard {} struck {} for {} damage",
+                            guard.getUUID(), target.getType().toShortString(), GUARD_ATTACK_DAMAGE);
+                    }
                 }
             }
         }
@@ -200,17 +203,16 @@ public final class GuardDefenseSystem {
             anchor.getX() + r, anchor.getY() + 32.0, anchor.getZ() + r
         );
 
-        for (Villager villager : level.getEntitiesOfClass(Villager.class, area)) {
-            if (!village.hasVillager(villager.getUUID())) continue;
-            if (guards.contains(villager)) continue;
-
-            // HEARD_BELL_TIME triggers vanilla panic: the villager's brain switches to a
-            // "hide near Bell" state. WALK_TARGET toward the anchor is a direct override
-            // in case the vanilla hiding spot logic has nowhere to send them.
-            villager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, level.getGameTime());
-            villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
-                new WalkTarget(anchor, SHELTER_SPEED, 4));
-        }
+        level.getEntitiesOfClass(Villager.class, area).stream()
+            .filter(v -> village.hasVillager(v.getUUID()) && !guards.contains(v))
+            .forEach(v -> {
+                // HEARD_BELL_TIME triggers vanilla panic: the villager's brain switches to a
+                // "hide near Bell" state. WALK_TARGET toward the anchor is a direct override
+                // in case the vanilla hiding spot logic has nowhere to send them.
+                v.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, level.getGameTime());
+                v.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                    new WalkTarget(anchor, SHELTER_SPEED, 4));
+            });
     }
 
     // -------------------------------------------------------------------------
@@ -219,6 +221,9 @@ public final class GuardDefenseSystem {
 
     private static void clearAlert(SmartVillage village, List<Villager> guards, long gameTick) {
         village.clearThreatAlert();
+        ProsperitySystem.onThreatDefeated(village);
+        // Mark threat areas near the anchor as cleared now that Guards have resolved the fight.
+        village.getVillageMemory().clearThreatNear(village.getAnchor());
         LOGGER.info("[SmartVillager] Village at {} — THREAT_ALERT cleared ({}s quiet)",
             village.getAnchor(), THREAT_CLEAR_COOLDOWN / 20);
         postHealingRequests(village, guards, gameTick);

@@ -4,6 +4,7 @@ import com.smartvillager.SmartVillager;
 import com.smartvillager.health.VillagerHealth;
 import com.smartvillager.hunger.VillagerHunger;
 import com.smartvillager.inventory.VillagerBackpack;
+import com.smartvillager.personality.VillagerPersonality;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -33,5 +34,10 @@ public final class ModAttachments {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<VillagerHealth>>
         VILLAGER_HEALTH = ATTACHMENT_TYPES.register("villager_health", () ->
             AttachmentType.builder(VillagerHealth::new).build()
+        );
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<VillagerPersonality>>
+        VILLAGER_PERSONALITY = ATTACHMENT_TYPES.register("villager_personality", () ->
+            AttachmentType.builder(() -> new VillagerPersonality()).build()
         );
 }

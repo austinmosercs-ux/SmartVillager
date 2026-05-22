@@ -3,6 +3,9 @@ package com.smartvillager.village;
 import com.mojang.logging.LogUtils;
 import com.smartvillager.SmartVillager;
 import com.smartvillager.cleric.ClericHealingSystem;
+import com.smartvillager.cartographer.CartographerSystem;
+import com.smartvillager.defense.EscortSystem;
+import com.smartvillager.merchant.MerchantSystem;
 import com.smartvillager.defense.GuardDefenseSystem;
 import com.smartvillager.defense.IronGolemSystem;
 import com.smartvillager.defense.PatrolSystem;
@@ -82,12 +85,14 @@ public final class VillageDetector {
     private static final Identifier PROF_FISHERMAN     = Identifier.withDefaultNamespace("fisherman");
     private static final Identifier PROF_SHEPHERD      = Identifier.withDefaultNamespace("shepherd");
     private static final Identifier PROF_BUTCHER       = Identifier.withDefaultNamespace("butcher");
-    private static final Identifier PROF_LEATHERWORKER = Identifier.withDefaultNamespace("leatherworker");
-    private static final Identifier PROF_TOOLSMITH     = Identifier.withDefaultNamespace("toolsmith");
-    private static final Identifier PROF_WEAPONSMITH   = Identifier.withDefaultNamespace("weaponsmith");
-    private static final Identifier PROF_ARMORER       = Identifier.withDefaultNamespace("armorer");
-    private static final Identifier PROF_FLETCHER      = Identifier.withDefaultNamespace("fletcher");
-    private static final Identifier PROF_MASON         = Identifier.withDefaultNamespace("mason");
+    private static final Identifier PROF_LEATHERWORKER  = Identifier.withDefaultNamespace("leatherworker");
+    private static final Identifier PROF_TOOLSMITH      = Identifier.withDefaultNamespace("toolsmith");
+    private static final Identifier PROF_CARTOGRAPHER   = Identifier.withDefaultNamespace("cartographer");
+    private static final Identifier PROF_WEAPONSMITH    = Identifier.withDefaultNamespace("weaponsmith");
+    private static final Identifier PROF_ARMORER        = Identifier.withDefaultNamespace("armorer");
+    private static final Identifier PROF_FLETCHER       = Identifier.withDefaultNamespace("fletcher");
+    private static final Identifier PROF_MASON          = Identifier.withDefaultNamespace("mason");
+    private static final Identifier PROF_MERCHANT       = Identifier.fromNamespaceAndPath(SmartVillager.MOD_ID, "merchant");
     private VillageDetector() {}
 
     // -------------------------------------------------------------------------
@@ -272,15 +277,15 @@ public final class VillageDetector {
             if (missing != null) return missing;
         }
 
-        // Tier 3 — early manufacturing (prosperity 150+).
+        // Tier 3 — early manufacturing + exploration (prosperity 150+).
         if (prosperity >= TIER_3_THRESHOLD) {
-            missing = firstMissing(village, PROF_LEATHERWORKER, PROF_TOOLSMITH);
+            missing = firstMissing(village, PROF_LEATHERWORKER, PROF_TOOLSMITH, PROF_CARTOGRAPHER);
             if (missing != null) return missing;
         }
 
-        // Tier 4 — full defense and expansion chain (prosperity 200+).
+        // Tier 4 — full defense, expansion, and trade chain (prosperity 200+).
         if (prosperity >= TIER_4_THRESHOLD) {
-            missing = firstMissing(village, PROF_WEAPONSMITH, PROF_ARMORER, PROF_FLETCHER, PROF_MASON);
+            missing = firstMissing(village, PROF_WEAPONSMITH, PROF_ARMORER, PROF_FLETCHER, PROF_MASON, PROF_MERCHANT);
             if (missing != null) return missing;
         }
 
@@ -354,13 +359,17 @@ public final class VillageDetector {
             FletcherSystem.tick(level, village, level.getGameTime());
             MasonSystem.tick(level, village, level.getGameTime());
             ClericHealingSystem.tick(level, village, level.getGameTime());
+            CartographerSystem.tick(level, village, level.getGameTime());
+            MerchantSystem.tick(level, village, level.getGameTime());
             GuardDefenseSystem.tick(level, village, level.getGameTime());
             PatrolSystem.tick(level, village, level.getGameTime());
+            EscortSystem.tick(level, village, level.getGameTime());
             IronGolemSystem.tick(level, village, level.getGameTime());
             if (level.getGameTime() % LIBRARIAN_CHECK_INTERVAL == 0) {
                 LibrarianCoordinator.tick(village);
                 NeedQueue.tick(village, level.getGameTime());
                 village.addProsperity(1);
+                village.getVillageMemory().prune(level.getGameTime());
             }
         }
     }
@@ -382,7 +391,9 @@ public final class VillageDetector {
             village.getAnchor(), village.getRoster().size(), elapsed);
         LibrarianCoordinator.abstractTick(village);
         NeedQueue.abstractTick(village, currentTick);
-        GuardDefenseSystem.abstractTick(village);
+        CartographerSystem.abstractTick(village);
+        MerchantSystem.abstractTick();
+        GuardDefenseSystem.abstractTick();
         IronGolemSystem.abstractTick(village);
         FarmerSystem.abstractTick(village);
         FishermanSystem.abstractTick(village);

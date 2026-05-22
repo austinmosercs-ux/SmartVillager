@@ -74,6 +74,8 @@ public final class PatrolSystem {
             .map(e -> (Villager) e)
             // Off-duty guards skip patrol at night — vanilla sleep behavior takes over.
             .filter(guard -> !night || DayNightCycle.isGuardOnNightDuty(guard.getUUID(), totalGuards))
+            // Guards on active escort missions are managed by EscortSystem, not patrol.
+            .filter(guard -> !EscortSystem.isEscorting(guard.getUUID()))
             .forEach(guard -> tickGuardPatrol(guard, waypoints));
     }
 
@@ -84,7 +86,7 @@ public final class PatrolSystem {
     private static void tickGuardPatrol(Villager guard, List<BlockPos> waypoints) {
         int index = waypointIndices.computeIfAbsent(
             guard.getUUID(),
-            uuid -> Math.abs(uuid.hashCode()) % waypoints.size()
+            uuid -> (uuid.hashCode() & Integer.MAX_VALUE) % waypoints.size()
         );
 
         BlockPos target = waypoints.get(index);

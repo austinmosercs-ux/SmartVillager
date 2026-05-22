@@ -1,0 +1,15 @@
+# Profession texture directory
+#
+# Place PNG files here to give Guard and Merchant custom appearance:
+#
+#   guard.png    — profession overlay for Guard villagers
+#                  Rendered by vanilla VillagerProfessionLayer (automatic).
+#
+#   merchant.png — profession overlay for Merchant villagers
+#                  MerchantColorLayer renders the Wandering Trader texture
+#                  (minecraft:textures/entity/wandering_trader.png) over this
+#                  with a biome-derived DyeColor tint. This file can remain
+#                  blank or serve as a fallback; the layer handles appearance.
+#
+# Without these files the renderer shows the purple/black missing-texture
+# checkerboard. The mod compiles and runs correctly either way.

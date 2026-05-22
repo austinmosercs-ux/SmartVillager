@@ -686,6 +686,19 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/build/BuildTask.java` | Immutable record for a single queued build task: type, target BlockPos, progress required/done; CODEC-serialized |
 | `src/main/java/com/smartvillager/build/BuildQueue.java` | Ordered list of BuildTasks per village; head-first processing; CODEC-serialized through SmartVillage |
 | `src/main/java/com/smartvillager/build/MasonSystem.java` | Drives Mason quarrying subrole (cobblestone, gravel, sand), build queue execution, and storehouse chest expansion; posts NEED_TOOLS when no pickaxe available |
+| `src/main/java/com/smartvillager/defense/EscortSystem.java` | Assigns Guards to NEED_ESCORT requests; tracks escort state (accept→accompany→return); skips escorting Guards from patrol in PatrolSystem |
+| `src/main/java/com/smartvillager/cartographer/CartographerSystem.java` | Drives Cartographer survey waypoints and scouting subrole; queues PLACE_CHEST build tasks when prosperity ≥ 150; records explored territory in VillageMemory |
+| `src/main/java/com/smartvillager/merchant/MerchantSystem.java` | Drives Merchant approach-player behavior and dynamic shop UI; builds offers from live stockpile counts with supply-based pricing; intercepts player interaction to open trade screen |
+| `src/main/java/com/smartvillager/village/ProsperitySystem.java` | Event-driven prosperity adjustments: villager death (−30), threat defeated (+20), structure built (+15), trade completed (+10), player donation (+5), villager starving (−5) |
+| `src/main/java/com/smartvillager/personality/PersonalityTrait.java` | Enum (BRAVE/CAUTIOUS/GREEDY/GENEROUS) with codec and behavior multiplier methods for escort request chance, queue response, and merchant pricing |
+| `src/main/java/com/smartvillager/personality/VillagerPersonality.java` | Per-villager attachment wrapping PersonalityTrait; random assignment on creation; stored via ModAttachments.VILLAGER_PERSONALITY |
+| `src/main/java/com/smartvillager/reputation/PlayerReputation.java` | Player reputation tier thresholds (HOSTILE/NEUTRAL/FRIENDLY/HONORED) and price multiplier lookup used by MerchantSystem |
+| `src/main/java/com/smartvillager/memory/ThreatRecord.java` | Immutable record (pos, gameTick, cleared) with CODEC; tracks a single threat location in VillageMemory |
+| `src/main/java/com/smartvillager/memory/VillageMemory.java` | Persistent village memory: records threat locations (96k-tick expiry) and villager death sites; isFlagged() used by MasonSystem and CartographerSystem |
+| `src/main/java/com/smartvillager/client/ClientModEvents.java` | Client-only MOD bus event registration; wires SmartVillagerRenderer for EntityType.VILLAGER; called from SmartVillager constructor guarded by dist check |
+| `src/main/java/com/smartvillager/client/SmartVillagerRenderer.java` | Extends VillagerRenderer to add MerchantColorLayer; all vanilla layers are preserved |
+| `src/main/java/com/smartvillager/client/MerchantColorLayer.java` | Render layer that draws the Wandering Trader texture with a biome-derived DyeColor tint when the villager's profession is smartvillager:merchant |
+| `src/main/java/com/smartvillager/registration/ModCreativeTabs.java` | Registers the SmartVillager creative mode tab; currently empty (emerald icon placeholder); add items here as custom blocks/items are introduced |
 
 ---
 

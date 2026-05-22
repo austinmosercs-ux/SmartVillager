@@ -442,6 +442,143 @@ Legend: `[ ]` = untested · `[x]` = passing · `[~]` = partial / flaky · `[!]` 
 
 ---
 
+## Phase 15b — Escort System
+
+**Goal:** Confirm Guards accept NEED_ESCORT requests, accompany the requester, and return to patrol.
+
+**Setup:** Have at least one Guard in the roster and a Mason or Toolsmith. Enable `/sv debug`.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Watch Guard during normal patrol | Guard walks the perimeter including stockpile checkpoint |
+| 2 | Post a NEED_ESCORT manually or wait for Mason to post one | Run `/sv queue` — `NEED_ESCORT` appears |
+| 3 | Watch a Guard | They accept and path toward the requesting villager |
+| 4 | Watch the Guard + requester together | Guard moves with the requester; does not resume patrol |
+| 5 | When the requester returns near the Bell | Guard breaks escort and resumes patrol route |
+
+- [ ] Guard accepts NEED_ESCORT from queue
+- [ ] Guard accompanies requester during escort
+- [ ] Guard skips patrol while on escort duty
+- [ ] Guard returns to patrol after escort completes
+
+---
+
+## Phase 15c — Cartographer System
+
+**Goal:** Confirm the Cartographer surveys the village, scouts outside it, and queues build tasks.
+
+**Setup:** Have a Cartographer in the roster. Set prosperity ≥ 150 for build planning.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Watch the Cartographer during the day | They walk outward waypoints around the village perimeter |
+| 2 | Run `/sv queue` | After a scouting run, `NEED_ESCORT` may appear if the area is flagged |
+| 3 | Set prosperity ≥ 150 and let the Cartographer run | Run `/sv build list` — a PLACE_CHEST task should appear |
+| 4 | Confirm no duplicate PLACE_CHEST tasks | Only one PLACE_CHEST task exists at a time |
+
+- [ ] Cartographer walks survey waypoints during daytime
+- [ ] Cartographer posts NEED_ESCORT before scouting in unknown areas
+- [ ] Cartographer queues PLACE_CHEST when prosperity ≥ 150 and queue is empty
+- [ ] No duplicate build tasks are created
+
+---
+
+## Phase 15d — Merchant Shop
+
+**Goal:** Confirm the Merchant opens a dynamic shop showing only items currently in stock.
+
+**Setup:** Stock the village with several item types via `/sv stockpile add`.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Right-click the Merchant villager | Trade screen opens (not vanilla villager screen) |
+| 2 | Run `/sv stockpile clear` then right-click Merchant | Trade screen is empty — no hardcoded trades |
+| 3 | Add bread × 64: `/sv stockpile add bread 64` | Bread appears in trades at base price |
+| 4 | Add bread × 8 more (low stock): `/sv stockpile add bread 8` | Bread price increases (low stock surcharge) |
+| 5 | Add bread × 64 again (high stock) | Bread price decreases (high stock discount) |
+| 6 | Watch the Merchant during full sim | They path toward you when you are within ~24 blocks |
+
+- [ ] Right-click opens dynamic trade screen
+- [ ] Empty stockpile → empty shop
+- [ ] High stock (≥ 64 units) reduces price; low stock (≤ 8 units) increases it
+- [ ] Merchant approaches player within 24 blocks
+
+---
+
+## Phase 15e — Prosperity Score Events
+
+**Goal:** Confirm discrete events trigger correct prosperity changes.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Note current prosperity via `/sv status` | |
+| 2 | Kill a villager | `/sv status` — prosperity drops by 30 |
+| 3 | `/sv threat trigger` then `/sv threat clear` | Prosperity increases by 20 (threat defeated) |
+| 4 | Hand-place an item in a stockpile chest | Prosperity increases by 5 (player donation) |
+| 5 | Complete a Mason build task | Prosperity increases by 15 |
+
+- [ ] Villager death: −30 prosperity
+- [ ] Threat defeated: +20 prosperity
+- [ ] Player donation to stockpile chest: +5 prosperity
+- [ ] Structure built (Mason task complete): +15 prosperity
+
+---
+
+## Phase 15f — Personality Traits
+
+**Goal:** Confirm villager personality traits affect escort and queue behavior.
+
+**Setup:** Enable `/sv debug`. Observe villagers with different trait types.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Watch a BRAVE Toolsmith when ore is low | May attempt to mine without posting NEED_ESCORT |
+| 2 | Watch a CAUTIOUS Toolsmith in the same situation | Always posts NEED_ESCORT before going out |
+| 3 | Check a GREEDY Merchant's prices | Slightly higher base prices than neutral Merchant |
+
+- [ ] BRAVE villagers have higher escort request threshold
+- [ ] CAUTIOUS villagers always post NEED_ESCORT
+- [ ] GREEDY Merchants apply a price multiplier
+
+---
+
+## Phase 15g — Village Memory
+
+**Goal:** Confirm threat locations are recorded, flagged for Mason/Toolsmith, and cleared by Guards.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Run `/sv threat trigger` near a quarry site | Threat is recorded in village memory |
+| 2 | Watch the Mason during the alert | Mason avoids going to the quarry while area is flagged |
+| 3 | Run `/sv threat clear` | Guard clears the threat record |
+| 4 | Watch the Mason after threat clears | Mason resumes quarrying in the previously flagged area |
+
+- [ ] Threat locations are recorded during THREAT_ALERT
+- [ ] Mason skips quarry positions in flagged threat areas
+- [ ] Guard clearing a threat removes the flag from village memory
+
+---
+
+## Phase 15h — Skin Renderer
+
+**Goal:** Confirm Guard and Merchant villagers render with custom profession textures and Merchants use the Wandering Trader appearance.
+
+**Setup:** Ensure PNG textures exist at `assets/smartvillager/textures/entity/villager/profession/guard.png` and `merchant.png`. Without them the purple/black missing-texture placeholder will show.
+
+| # | What to do | What to look for |
+|---|---|---|
+| 1 | Look at a Guard villager | Their profession overlay uses the custom Guard texture (or missing-texture if no PNG yet) |
+| 2 | Look at a Merchant villager | Their body renders with the Wandering Trader texture |
+| 3 | Check Merchant in a Plains village vs a Desert village | Plains Merchant shows WHITE tint; Desert Merchant shows CYAN tint |
+| 4 | Right-click any non-Guard/non-Merchant villager | Vanilla profession texture renders normally — no broken layers |
+
+- [ ] Guard villager shows custom profession texture (no crash)
+- [ ] Merchant villager renders with Wandering Trader texture overlay
+- [ ] Merchant robe tint matches the village's biome (plains=white, desert=cyan, savanna=orange, taiga=blue)
+- [ ] Vanilla profession villagers are unaffected
+
+---
+
 ## Phase 15 — Regression Scenarios
 
 Run these after any significant code change to catch breakage across systems.
