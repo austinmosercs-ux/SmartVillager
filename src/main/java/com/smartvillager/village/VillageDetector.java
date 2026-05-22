@@ -11,6 +11,7 @@ import com.smartvillager.food.FarmerSystem;
 import com.smartvillager.food.FishermanSystem;
 import com.smartvillager.food.LeatherworkerSystem;
 import com.smartvillager.food.ShepherdSystem;
+import com.smartvillager.build.MasonSystem;
 import com.smartvillager.supply.ArmorerSystem;
 import com.smartvillager.supply.FletcherSystem;
 import com.smartvillager.supply.WeaponsmithSystem;
@@ -68,6 +69,7 @@ public final class VillageDetector {
     private static final Identifier PROF_WEAPONSMITH   = Identifier.withDefaultNamespace("weaponsmith");
     private static final Identifier PROF_ARMORER       = Identifier.withDefaultNamespace("armorer");
     private static final Identifier PROF_FLETCHER      = Identifier.withDefaultNamespace("fletcher");
+    private static final Identifier PROF_MASON         = Identifier.withDefaultNamespace("mason");
     private VillageDetector() {}
 
     // -------------------------------------------------------------------------
@@ -190,6 +192,7 @@ public final class VillageDetector {
         if (village.countProfession(PROF_WEAPONSMITH)   == 0) return PROF_WEAPONSMITH;
         if (village.countProfession(PROF_ARMORER)       == 0) return PROF_ARMORER;
         if (village.countProfession(PROF_FLETCHER)      == 0) return PROF_FLETCHER;
+        if (village.countProfession(PROF_MASON)         == 0) return PROF_MASON;
         return PROF_FARMER;
     }
 
@@ -245,6 +248,7 @@ public final class VillageDetector {
             WeaponsmithSystem.tick(level, village, level.getGameTime());
             ArmorerSystem.tick(level, village, level.getGameTime());
             FletcherSystem.tick(level, village, level.getGameTime());
+            MasonSystem.tick(level, village, level.getGameTime());
             ClericHealingSystem.tick(level, village, level.getGameTime());
             GuardDefenseSystem.tick(level, village, level.getGameTime());
             PatrolSystem.tick(level, village, level.getGameTime());
@@ -284,6 +288,7 @@ public final class VillageDetector {
         WeaponsmithSystem.abstractTick(village);
         ArmorerSystem.abstractTick(village);
         FletcherSystem.abstractTick(village);
+        MasonSystem.abstractTick(village);
         village.addProsperity(5);
         Map<UUID, Integer> missedMeals = HungerSystem.abstractTick(village, elapsed);
         Set<UUID> died = HealthSystem.abstractTick(village, missedMeals);

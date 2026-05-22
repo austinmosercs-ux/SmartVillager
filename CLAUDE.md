@@ -662,6 +662,10 @@ Build in this order to avoid dependency issues:
 | `src/main/java/com/smartvillager/supply/WeaponsmithSystem.java` | Crafts iron swords and axes for Guards from stockpile ingots; smelts raw ore as subrole when ingots are below threshold; Weaponsmith has smelt priority over Armorer |
 | `src/main/java/com/smartvillager/supply/ArmorerSystem.java` | Crafts iron armor pieces (helmet, chestplate, leggings, boots) for Guards; smelt subrole activates only when ore is abundant so Weaponsmith has first access to scarce ore |
 | `src/main/java/com/smartvillager/supply/FletcherSystem.java` | Crafts arrows from oak logs, feathers, and flint up to a 64-arrow buffer; posts NEED_MATERIALS to NeedQueue when feather or flint supply drops below threshold |
+| `src/main/java/com/smartvillager/build/BuildTaskType.java` | Enum of build task types (PLACE_CHEST) describing what action fires on task completion |
+| `src/main/java/com/smartvillager/build/BuildTask.java` | Immutable record for a single queued build task: type, target BlockPos, progress required/done; CODEC-serialized |
+| `src/main/java/com/smartvillager/build/BuildQueue.java` | Ordered list of BuildTasks per village; head-first processing; CODEC-serialized through SmartVillage |
+| `src/main/java/com/smartvillager/build/MasonSystem.java` | Drives Mason quarrying subrole (cobblestone, gravel, sand), build queue execution, and storehouse chest expansion; posts NEED_TOOLS when no pickaxe available |
 
 ---
 
@@ -697,7 +701,7 @@ Where to register or store new things:
 | Minecraft version | 26.1.2 |
 | NeoForge version | 26.1.2.44-beta |
 
-**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle, cleric healing, iron golem defense, food chain (farmer, fisherman, shepherd, butcher, leatherworker), defense supply (weaponsmith, armorer, fletcher)
+**Completed systems:** hunger, health, needqueue, village registry, guard defense, patrol, day/night cycle, cleric healing, iron golem defense, food chain (farmer, fisherman, shepherd, butcher, leatherworker), defense supply (weaponsmith, armorer, fletcher), mason build (quarrying subrole, build queue, storehouse chest expansion)
 
 **Branch pattern:** `feature/description` and `bugfix/description`
 

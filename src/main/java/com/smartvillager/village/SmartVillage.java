@@ -2,6 +2,7 @@ package com.smartvillager.village;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.smartvillager.build.BuildQueue;
 import com.smartvillager.needqueue.VillageNeedQueue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
@@ -92,7 +93,11 @@ public final class SmartVillage {
         Codec.INT
             .optionalFieldOf("prosperity_score")
             .xmap(opt -> opt.orElse(0), Optional::of)
-            .forGetter(SmartVillage::getProsperityScore)
+            .forGetter(SmartVillage::getProsperityScore),
+        BuildQueue.CODEC
+            .optionalFieldOf("build_queue")
+            .xmap(opt -> opt.orElseGet(BuildQueue::new), Optional::of)
+            .forGetter(SmartVillage::getBuildQueue)
     ).apply(i, SmartVillage::new));
 
     private final UUID id;
@@ -111,6 +116,8 @@ public final class SmartVillage {
     private long golemReplacementCooldownTick;
     // Persisted: cumulative prosperity score; drives golem commissioning and future unlocks.
     private int prosperityScore;
+    // Persisted: ordered list of build tasks for Mason to execute.
+    private final BuildQueue buildQueue;
 
     private SimulationMode mode = SimulationMode.ABSTRACT;
     private Set<Identifier> shortages = Collections.emptySet();
@@ -136,7 +143,8 @@ public final class SmartVillage {
                         DyeColor merchantColor, Map<UUID, Identifier> roster,
                         long lastAbstractUpdate, VillageStockpile stockpile,
                         VillageNeedQueue needQueue, StockpileChestTracker chestTracker,
-                        Set<UUID> golems, long golemReplacementCooldownTick, int prosperityScore) {
+                        Set<UUID> golems, long golemReplacementCooldownTick, int prosperityScore,
+                        BuildQueue buildQueue) {
         this.id = id;
         this.anchor = anchor;
         this.villagerTypeKey = villagerTypeKey;
@@ -149,6 +157,7 @@ public final class SmartVillage {
         this.golems = new HashSet<>(golems);
         this.golemReplacementCooldownTick = golemReplacementCooldownTick;
         this.prosperityScore = prosperityScore;
+        this.buildQueue = buildQueue;
     }
 
     public static SmartVillage create(BlockPos anchor, ResourceKey<VillagerType> typeKey,
@@ -165,7 +174,8 @@ public final class SmartVillage {
             new StockpileChestTracker(),
             new HashSet<>(),
             0L,
-            0
+            0,
+            new BuildQueue()
         );
     }
 
@@ -314,6 +324,10 @@ public final class SmartVillage {
     public void addProsperity(int amount) {
         prosperityScore += amount;
     }
+
+    // --- build queue ---
+
+    public BuildQueue getBuildQueue() { return buildQueue; }
 
     // --- getters ---
 

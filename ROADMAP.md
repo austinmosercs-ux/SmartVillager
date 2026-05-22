@@ -33,7 +33,7 @@ Build these once the foundation is solid. Branches 11–14 can be developed in p
 | 11 | `feature/food-chain` | Farmer (crops primary + wood subrole), Fisherman (fish primary + sand/clay/flint subrole), Shepherd (animal tending primary + byproduct supply subrole), Butcher (meat processing primary + husbandry subrole), Leatherworker (leather goods primary + flex subrole) — all deposit to shared inventory | In Review |
 | 12 | `feature/toolsmith-mining` | Toolsmith primary tool crafting; mining subrole: reads Cartographer cave data, posts NEED_ESCORT if area is flagged, mines ore and coal, deposits surplus to shared inventory for Weaponsmith and Armorer | In Review |
 | 13 | `feature/defense-supply` | Weaponsmith (weapons primary + smelting subrole), Armorer (armor primary + emergency rearm subrole), Fletcher (arrows primary + material gathering subrole) — all equip Guards from shared inventory, coordinate to avoid duplicating smelt work | In Review |
-| 14 | `feature/mason-build` | Mason build queue check (fed by Librarian); fetch materials; pathfind to site; place blocks; quarrying subrole when queue is empty or materials are low; posts NEED_ESCORT if quarry area is flagged | |
+| 14 | `feature/mason-build` | Mason build queue check (fed by Librarian); fetch materials; pathfind to site; place blocks; quarrying subrole when queue is empty or materials are low; posts NEED_ESCORT if quarry area is flagged | In Review |
 
 ---
 
