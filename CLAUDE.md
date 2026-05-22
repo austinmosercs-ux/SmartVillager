@@ -699,6 +699,7 @@ Where to register or store new things:
 - **Finish the task first** — complete the requested change before suggesting refactors, improvements, or follow-up work
 - **Update Key Files before finishing** — every new Java file must have a row added to the Key Files table in the same task that created it
 - **Update DEV_COMMANDS.md for every new `/sv` command** — whenever a command is added to or removed from `DebugCommands.java`, update `DEV_COMMANDS.md` in the same task: add a new entry under the correct section with the exact syntax, a one-line description, and any relevant testing notes; also add it to the Common Testing Workflows section if it enables a meaningful test scenario
+- **Update TEST_CHECKLIST.md for every new testable behavior** — whenever a new system, role behavior, NeedQueue type, command, or in-game mechanic is implemented, add one or more unchecked `- [ ]` items to `TEST_CHECKLIST.md` under the appropriate section in the same task that created the feature; if no section fits, create one; never mark items as passing (`[x]`) yourself — that is the user's job after in-game verification
 
 ---
 
